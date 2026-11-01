@@ -242,7 +242,7 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
             )
             if res_fetch.returncode == 0:
                 _report(15, "正在更新本地 mods/ 壓縮檔清單...")
-                subprocess.run(
+                res_co = subprocess.run(
                     ["git", "checkout", "origin/main", "--", "mods"],
                     cwd=str(ROOT_DIR),
                     capture_output=True,
@@ -252,9 +252,38 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
                     timeout=20,
                     **kw
                 )
-                return True, "已從 GitHub 同步最新模組包"
-        except Exception as e:
+                if res_co.returncode == 0:
+                    return True, "已從 GitHub 同步最新模組包 (git fetch)"
+        except Exception:
             pass
+
+    # 備援 1：透過 GitHub REST API 比對遠端 mods/ 清單，僅針對新增或變更的壓縮檔極速下載
+    try:
+        import urllib.request
+        _report(12, "正在比對 GitHub 雲端 mods/ 檔案清單...")
+        api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/mods"
+        req = urllib.request.Request(api_url, headers={"User-Agent": "modsloader-runescape"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            remote_items = json.loads(resp.read().decode("utf-8"))
+        if isinstance(remote_items, list):
+            updated_cnt = 0
+            for r_item in remote_items:
+                r_name = r_item.get("name", "")
+                r_size = r_item.get("size", 0)
+                dl_url = r_item.get("download_url", "")
+                if not r_name.lower().endswith((".zip", ".rar", ".7z")) or not dl_url:
+                    continue
+                local_f = mods_dir / r_name
+                if not local_f.exists() or local_f.stat().st_size != r_size:
+                    _report(15, f"正在從 GitHub 下載更新模組: {r_name}...")
+                    dl_req = urllib.request.Request(dl_url, headers={"User-Agent": "modsloader-runescape"})
+                    with urllib.request.urlopen(dl_req, timeout=30) as dl_resp:
+                        with open(local_f, "wb") as out_f:
+                            out_f.write(dl_resp.read())
+                    updated_cnt += 1
+            return True, f"已與 GitHub 雲端模組庫同步完成 (更新 {updated_cnt} 項)"
+    except Exception:
+        pass
 
     # 備援：使用臨時目錄 git clone --depth 1 同步 mods/ 資料夾
     try:
