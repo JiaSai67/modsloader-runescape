@@ -1,4 +1,4 @@
-# MLRS (ModsLoader - RuneScapes) v1.0.0
+# MLRS (ModsLoader - RuneScapes) v1.0.1
 
 **RuneScape: Dragonwilds** 現代化極簡 Git 雲端模組同步、版本更新檢查、全模組繁體中文清單與遊戲內文本漢化安裝器（符合 AI Tool Standard 規範）。
 

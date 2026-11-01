@@ -11,7 +11,7 @@ if not exist "%LAUNCHER_API%" (
     exit /b 1
 )
 
-python "%LAUNCHER_API%" --path "%TOOL_ENTRY%" --name "MLRS (ModsLoader - RuneScapes)" --desc "RuneScape: Dragonwilds 現代化 Git 模組同步與版本更新安裝器 v1.0.0 (自動檢查 Git 版本、固定版 UE4SS + RuneSchema 與 28 款模組一鍵更新)"
+python "%LAUNCHER_API%" --path "%TOOL_ENTRY%" --name "MLRS (ModsLoader - RuneScapes)" --desc "RuneScape: Dragonwilds 現代化 Git 模組同步與版本更新安裝器 v1.0.1 (完整 30 項繁中模組清單、開啟檢查 Git 版本、一鍵安裝自動完成遊戲內文本漢化)"
 echo.
-echo [完成] 已成功向 AI Tool Launcher 註冊 MLRS (ModsLoader - RuneScapes) v1.0.0！
+echo [完成] 已成功向 AI Tool Launcher 註冊 MLRS (ModsLoader - RuneScapes) v1.0.1！
 pause

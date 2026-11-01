@@ -2078,15 +2078,14 @@ def install_all_mods(
     game_path: str,
     selected_filenames: Optional[List[str]] = None,
     sync_git: bool = True,
-    translate_texts: bool = True,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> Tuple[bool, str, int, int]:
     """
-    一鍵執行完整同步與安裝流程：
+    一鍵執行完整同步、安裝與文本漢化流程：
     1. 從 Git 同步最新壓縮檔至本地 mods/
     2. 強制優先安裝固定版 UE4SS 與 RuneSchema
     3. 依序安裝所有勾選的擴充模組並寫入版本帳本
-    4. 自動套用遊戲內模組介面與設定選單繁體中文化 (translate_texts=True)
+    4. 一鍵安裝期間自動完成所有遊戲內模組介面與 Mod Menu 設定選單繁體中文化
     回傳 (success, summary_msg, installed_count, total_count)
     """
     def _report(pct: int, msg: str):
@@ -2134,13 +2133,12 @@ def install_all_mods(
         if ok:
             success_count += 1
 
-    # Step 4: 套用遊戲內模組介面與設定選單繁體中文化
+    # Step 4: 一鍵安裝時直接完成遊戲內模組介面與設定選單繁體中文化
+    _report(95, "正在一鍵完成遊戲內模組設定選單與介面繁體中文化...")
+    loc_cnt, loc_mods = apply_mod_text_translations(game_path)
     trans_msg = ""
-    if translate_texts:
-        _report(95, "正在套用遊戲內模組設定選單與介面繁體中文化...")
-        loc_cnt, loc_mods = apply_mod_text_translations(game_path)
-        if loc_cnt > 0:
-            trans_msg = f"已同步完成 {len(loc_mods)} 項模組的遊戲內介面與設定選單繁體中文化（共處理 {loc_cnt} 個語言設定檔）。"
+    if loc_cnt > 0:
+        trans_msg = f"已同步完成 {len(loc_mods)} 項模組的遊戲內介面與設定選單繁體中文化（共處理 {loc_cnt} 個語言設定檔）。"
 
     # 安裝完成後更新 Git 狀態快取
     try:

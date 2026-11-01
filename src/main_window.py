@@ -24,7 +24,7 @@ from qfluentwidgets import (
     setTheme, Theme, isDarkTheme, setThemeColor,
     CardWidget, StrongBodyLabel, BodyLabel, CaptionLabel, SubtitleLabel,
     PrimaryPushButton, PushButton, TransparentPushButton, ToolButton,
-    ProgressBar, TreeWidget, LineEdit, CheckBox,
+    ProgressBar, TreeWidget, LineEdit,
     InfoBar, InfoBarPosition, FluentIcon, MessageBox
 )
 
@@ -52,7 +52,7 @@ class GitCheckWorker(QThread):
 
 
 class InstallWorker(QThread):
-    """背景執行 Git 同步、30 項套件/模組解壓安裝與遊戲內模組文本漢化的 Worker 執行緒"""
+    """背景執行 Git 同步、30 項套件/模組解壓安裝與自動完成遊戲內模組文本漢化的 Worker 執行緒"""
     progress_signal = Signal(int, str)
     finished_signal = Signal(bool, str, int, int)
 
@@ -61,13 +61,11 @@ class InstallWorker(QThread):
         game_path: str,
         selected_filenames: Optional[List[str]] = None,
         sync_git: bool = True,
-        translate_texts: bool = True,
     ):
         super().__init__()
         self.game_path = game_path
         self.selected_filenames = selected_filenames
         self.sync_git = sync_git
-        self.translate_texts = translate_texts
 
     def run(self):
         try:
@@ -75,7 +73,6 @@ class InstallWorker(QThread):
                 game_path=self.game_path,
                 selected_filenames=self.selected_filenames,
                 sync_git=self.sync_git,
-                translate_texts=self.translate_texts,
                 progress_callback=lambda pct, text: self.progress_signal.emit(pct, text),
             )
             self.finished_signal.emit(ok, msg, cnt, tot)
@@ -113,7 +110,7 @@ class MainWindow(QWidget):
     EXPANDED_HEIGHT = 780
     WINDOW_WIDTH = 1060
 
-    def __init__(self, version: str = "1.0.0"):
+    def __init__(self, version: str = "1.0.1"):
         super().__init__()
         self.version = version
         # 預設展開完整模組清單，讓使用者開啟即一覽全部 30 項繁中模組與說明
@@ -270,26 +267,20 @@ class MainWindow(QWidget):
         self.btn_refresh.setToolTip("重新掃描遊戲目錄並檢查 GitHub 雲端模組是否有新版本")
         self.btn_refresh.clicked.connect(lambda: self.refresh_status(check_git=True))
 
-        # 獨立套用遊戲內文本漢化按鈕
-        self.btn_apply_trans = PushButton(FluentIcon.LANGUAGE, "套用文本漢化", self.action_card)
-        self.btn_apply_trans.setFixedHeight(36)
-        self.btn_apply_trans.setToolTip("立即將遊戲內已安裝模組的 Mod Menu 設定選單與介面文字轉換為繁體中文")
-        self.btn_apply_trans.clicked.connect(self.on_apply_translations_only)
-
         # 清除模組按鈕
         self.btn_uninstall = PushButton(FluentIcon.DELETE, "清除模組", self.action_card)
         self.btn_uninstall.setFixedHeight(36)
         self.btn_uninstall.setToolTip("一鍵移除遊戲目錄內的 UE4SS、RuneSchema 與所有模組，恢復純淨原版")
         self.btn_uninstall.clicked.connect(self.on_uninstall_all)
 
-        # 一鍵同步並安裝主按鈕
+        # 一鍵同步並安裝主按鈕 (安裝時自動完成遊戲內模組文本漢化)
         self.btn_install = PrimaryPushButton(FluentIcon.DOWNLOAD, "一鍵同步並安裝模組", self.action_card)
-        self.btn_install.setFixedSize(205, 36)
+        self.btn_install.setFixedSize(210, 36)
         self.btn_install.setFont(get_app_font(10, True))
+        self.btn_install.setToolTip("一鍵同步最新雲端模組、部署雙核心框架與勾選模組，並自動完成遊戲內模組文本繁體中文化")
         self.btn_install.clicked.connect(self.on_start_install)
 
         top_action_row.addWidget(self.btn_refresh)
-        top_action_row.addWidget(self.btn_apply_trans)
         top_action_row.addWidget(self.btn_uninstall)
         top_action_row.addWidget(self.btn_install)
         action_layout.addLayout(top_action_row)
@@ -320,15 +311,6 @@ class MainWindow(QWidget):
         self.btn_toggle_list.clicked.connect(self.on_toggle_mod_list)
         toggle_row.addWidget(self.btn_toggle_list)
         toggle_row.addStretch(1)
-
-        # 遊戲內文本中文化自動套用勾選開關
-        self.chk_auto_translate = CheckBox("安裝時自動套用遊戲內模組文本繁體中文化", self)
-        self.chk_auto_translate.setChecked(True)
-        self.chk_auto_translate.setFont(get_app_font(9, False))
-        self.chk_auto_translate.setToolTip(
-            "勾選後，安裝或更新模組時會自動將 Mod Menu、Station Feeder、Stashlink、QuickStack、RSDSFreedom 等遊戲內介面與設定選單轉為繁體中文"
-        )
-        toggle_row.addWidget(self.chk_auto_translate)
 
         self.btn_select_all = TransparentPushButton("全選擴充模組", self)
         self.btn_select_all.setFont(get_app_font(9, False))
@@ -559,7 +541,6 @@ class MainWindow(QWidget):
             self.list_card.show()
             self.btn_select_all.show()
             self.btn_deselect_all.show()
-            self.chk_auto_translate.show()
             self.btn_toggle_list.setIcon(FluentIcon.UP)
             self.btn_toggle_list.setText(f"收合完整模組清單 (共 {total_cnt} 項：2 核心框架 + {addons_cnt} 擴充模組)")
             self.setMinimumHeight(580)
@@ -569,7 +550,6 @@ class MainWindow(QWidget):
             self.list_card.hide()
             self.btn_select_all.hide()
             self.btn_deselect_all.hide()
-            self.chk_auto_translate.hide()
             self.btn_toggle_list.setIcon(FluentIcon.DOWN)
             self.btn_toggle_list.setText(f"展開完整模組清單 (共 {total_cnt} 項：2 核心框架 + {addons_cnt} 擴充模組)")
             self.setMinimumHeight(self.COLLAPSED_HEIGHT)
@@ -899,44 +879,6 @@ class MainWindow(QWidget):
                 parent=self,
             )
 
-    def on_apply_translations_only(self):
-        if not mod_manager.is_valid_game_dir(self.game_path):
-            InfoBar.error(
-                title="尚未找到遊戲目錄",
-                content="請先確認 RSDragonwilds 安裝目錄後再套用文本漢化！",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=3500,
-                parent=self,
-            )
-            return
-
-        loc_cnt, loc_mods = mod_manager.apply_mod_text_translations(self.game_path)
-        if loc_cnt > 0:
-            mods_str = "、".join(loc_mods)
-            self.lbl_action_title.setText(f"🌐 已套用遊戲內模組繁體中文化 ({len(loc_mods)} 項模組)")
-            self.lbl_action_sub.setText(f"已完成漢化模組：{mods_str}（共更新 {loc_cnt} 個設定與介面腳本檔）")
-            InfoBar.success(
-                title="遊戲內模組文本漢化完成",
-                content=f"已將 {len(loc_mods)} 項模組 ({mods_str}) 的 Mod Menu 選單與遊戲內介面轉為繁體中文！",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=4500,
-                parent=self,
-            )
-        else:
-            InfoBar.warning(
-                title="無須更新或尚未安裝模組",
-                content="所有已安裝模組的遊戲內文本已經是繁體中文，或您尚未點擊「一鍵同步並安裝模組」。",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=4000,
-                parent=self,
-            )
-
     def on_start_install(self):
         if not mod_manager.is_valid_game_dir(self.game_path):
             InfoBar.error(
@@ -951,23 +893,20 @@ class MainWindow(QWidget):
             return
 
         selected_files = self._get_selected_filenames()
-        translate_texts = self.chk_auto_translate.isChecked()
 
         self.btn_install.setEnabled(False)
         self.btn_uninstall.setEnabled(False)
         self.btn_refresh.setEnabled(False)
-        self.btn_apply_trans.setEnabled(False)
         self.btn_browse.setEnabled(False)
 
         self.progress_bar.setValue(0)
         self.progress_bar.show()
-        self.lbl_action_title.setText("⏳ 正在從 Git 同步、部署最新模組並套用繁體中文化...")
+        self.lbl_action_title.setText("⏳ 正在從 Git 同步、部署最新模組並自動套用繁體中文化...")
 
         self.worker = InstallWorker(
             game_path=self.game_path,
             selected_filenames=selected_files,
             sync_git=True,
-            translate_texts=translate_texts,
         )
         self.worker.progress_signal.connect(self._on_install_progress)
         self.worker.finished_signal.connect(self._on_install_finished)
@@ -981,7 +920,6 @@ class MainWindow(QWidget):
         self.btn_install.setEnabled(True)
         self.btn_uninstall.setEnabled(True)
         self.btn_refresh.setEnabled(True)
-        self.btn_apply_trans.setEnabled(True)
         self.btn_browse.setEnabled(True)
 
         self.refresh_status(check_git=False)
@@ -991,12 +929,11 @@ class MainWindow(QWidget):
         self.btn_install.setText("一鍵同步並安裝模組")
 
         if ok:
-            trans_note = "（含遊戲內模組介面繁體中文化）" if self.chk_auto_translate.isChecked() else ""
-            self.lbl_action_title.setText(f"✅ 模組同步、安裝與更新完成 ({cnt}/{tot}) {trans_note}")
-            self.lbl_action_sub.setText("所有核心框架 (UE4SS + RuneSchema) 與擴充模組均已就緒，可直接啟動遊戲！")
+            self.lbl_action_title.setText(f"✅ 模組同步、安裝與遊戲內文本漢化完成 ({cnt}/{tot})")
+            self.lbl_action_sub.setText("所有核心框架 (UE4SS + RuneSchema)、擴充模組與遊戲內繁體中文設定選單均已就緒，可直接啟動遊戲！")
             InfoBar.success(
-                title="安裝與漢化成功",
-                content=f"已成功同步並更新 {cnt} / {tot} 項套件與模組{trans_note}！",
+                title="一鍵安裝與漢化成功",
+                content=f"已成功同步並更新 {cnt} / {tot} 項套件與模組，並自動完成遊戲內模組介面繁體中文化！",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
