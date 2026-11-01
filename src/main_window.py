@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-RuneScape: Dragonwilds 模組同步安裝器 - 現代化極簡 Fluent GUI
+MLRS (ModsLoader - RuneScapes) - 現代化極簡 Fluent GUI
 參考 AIToolLauncher 與 SteamManifestUpdater (SMU) 視覺設計規範：
 - 支援系統深淺色主題自動適配 (setTheme(Theme.AUTO)) 與手動快速切換
-- 頂部品牌卡片 + 4 格狀態確認矩陣 (遊戲路徑、固定版 UE4SS、固定版 RuneSchema、擴充模組同步數)
-- 一鍵從 Git 同步並安裝按鈕 + 即時進度條
-- 可展開 / 收合的詳細模組清單 (TreeWidget 分類全展開 + 動態條紋色彩)
+- 開啟程式後自動於背景檢查 GitHub 遠端版本狀況與模組版本更新差異
+- 頂部品牌卡片 (含版本徽章與 Git 雲端同步狀態徽章) + 4 格狀態確認矩陣
+- 一鍵從 Git 同步並安裝/更新按鈕 + 即時進度條
+- 可展開 / 收合的詳細模組清單 (TreeWidget 分類全展開 + 動態條紋色彩 + 模組版本對比)
 """
 
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from PySide6.QtCore import Qt, QThread, Signal, QSize
 from PySide6.QtGui import QIcon, QPixmap, QColor, QBrush
@@ -28,6 +29,25 @@ from qfluentwidgets import (
 
 from src.theme_utils import get_state_color, get_app_font, get_rounded_pixmap
 from src import mod_manager
+
+
+class GitCheckWorker(QThread):
+    """開啟 MLRS 或點擊重新檢測時，於背景檢查 Git 雲端 Commit 與模組版本更新狀況的 Worker"""
+    finished_signal = Signal(dict, bool)
+
+    def __init__(self, game_path: str, is_startup: bool = False):
+        super().__init__()
+        self.game_path = game_path
+        self.is_startup = is_startup
+
+    def run(self):
+        try:
+            res = mod_manager.check_git_version_status(self.game_path)
+            self.finished_signal.emit(res, self.is_startup)
+        except Exception as e:
+            fallback = mod_manager.get_last_git_status()
+            fallback["summary_detail"] = f"Git 狀態檢查發生例外: {e}"
+            self.finished_signal.emit(fallback, self.is_startup)
 
 
 class InstallWorker(QThread):
@@ -84,18 +104,19 @@ class MainWindow(QWidget):
     EXPANDED_HEIGHT = 720
     WINDOW_WIDTH = 860
 
-    def __init__(self, version: str = "2.0.0"):
+    def __init__(self, version: str = "1.0.0"):
         super().__init__()
         self.version = version
         self.is_list_expanded = False
         self.worker: Optional[InstallWorker] = None
-        self.current_status = {}
+        self.git_worker: Optional[GitCheckWorker] = None
+        self.current_status: Dict = {}
 
         # 預設跟隨系統深淺色主題，並設定高質感主題色
         setTheme(Theme.AUTO)
         setThemeColor("#0078D4")
 
-        self.setWindowTitle(f"modsloader - runescape v{self.version}")
+        self.setWindowTitle(f"MLRS (ModsLoader - RuneScapes) v{self.version}")
         self.resize(self.WINDOW_WIDTH, self.COLLAPSED_HEIGHT)
         self.setMinimumWidth(780)
         self.setMinimumHeight(self.COLLAPSED_HEIGHT)
@@ -108,10 +129,11 @@ class MainWindow(QWidget):
         self._init_ui()
         self._apply_adaptive_theme()
 
-        # 自動偵測遊戲路徑並刷新狀態
+        # 自動偵測遊戲路徑並先刷新本地狀態，接著自動啟動背景 Git 版本狀態檢查
         detected = mod_manager.detect_game_path()
         self.game_path = detected
-        self.refresh_status()
+        self.refresh_status(check_git=False)
+        self.start_git_version_check(is_startup=True)
 
     def _init_ui(self):
         self.root_layout = QVBoxLayout(self)
@@ -134,18 +156,24 @@ class MainWindow(QWidget):
             self.lbl_logo.setPixmap(get_rounded_pixmap(pix, 56, 0.22))
         header_layout.addWidget(self.lbl_logo)
 
-        # 標題與路徑資訊
+        # 標題、版本徽章、Git 雲端狀態徽章與路徑資訊
         title_col = QVBoxLayout()
         title_col.setSpacing(4)
 
         title_row = QHBoxLayout()
         title_row.setSpacing(8)
-        self.lbl_app_title = SubtitleLabel("RuneScape: Dragonwilds 模組同步安裝器", self.header_card)
+        self.lbl_app_title = SubtitleLabel("MLRS (ModsLoader - RuneScapes)", self.header_card)
         self.lbl_app_title.setFont(get_app_font(14, True))
+
         self.lbl_ver_badge = CaptionLabel(f"v{self.version}", self.header_card)
         self.lbl_ver_badge.setFont(get_app_font(9, True))
+
+        self.lbl_git_badge = CaptionLabel("🔄 檢查 Git 版本中...", self.header_card)
+        self.lbl_git_badge.setFont(get_app_font(9, True))
+
         title_row.addWidget(self.lbl_app_title)
         title_row.addWidget(self.lbl_ver_badge)
+        title_row.addWidget(self.lbl_git_badge)
         title_row.addStretch(1)
 
         self.lbl_game_path = CaptionLabel("正在自動掃描 Steam 遊戲安裝路徑...", self.header_card)
@@ -189,7 +217,7 @@ class MainWindow(QWidget):
         self.card_stat_game = StatusMetricCard("🎮 遊戲主程式狀態", self)
         self.card_stat_ue4ss = StatusMetricCard("⚡ UE4SS 核心載入器 (固定版)", self)
         self.card_stat_rs = StatusMetricCard("🧩 RuneSchema 擴充框架 (固定版)", self)
-        self.card_stat_mods = StatusMetricCard("📦 擴充模組安裝狀態", self)
+        self.card_stat_mods = StatusMetricCard("📦 擴充模組安裝與版本狀態", self)
 
         grid_layout.addWidget(self.card_stat_game, 0, 0)
         grid_layout.addWidget(self.card_stat_ue4ss, 0, 1)
@@ -211,10 +239,10 @@ class MainWindow(QWidget):
 
         status_text_col = QVBoxLayout()
         status_text_col.setSpacing(4)
-        self.lbl_action_title = StrongBodyLabel("☁️ 雲端 Git 模組庫已就緒", self.action_card)
+        self.lbl_action_title = StrongBodyLabel("🔍 正在檢查 Git 雲端版本與模組更新狀態...", self.action_card)
         self.lbl_action_title.setFont(get_app_font(11, True))
         self.lbl_action_sub = CaptionLabel(
-            "點擊右側按鈕將自動從 Git 拉取最新壓縮檔，並依序安裝固定版 UE4SS、RuneSchema 與所有勾選模組。",
+            "正在連線至 GitHub (JiaSai67/modsloader-runescape) 比對最新模組版本...",
             self.action_card
         )
         self.lbl_action_sub.setFont(get_app_font(9, False))
@@ -222,10 +250,11 @@ class MainWindow(QWidget):
         status_text_col.addWidget(self.lbl_action_sub)
         top_action_row.addLayout(status_text_col, 1)
 
-        # 重新檢測按鈕
-        self.btn_refresh = PushButton(FluentIcon.SYNC, "重新檢測", self.action_card)
+        # 重新檢測按鈕 (同時重新掃描本地目錄與檢查 Git 遠端版本狀態)
+        self.btn_refresh = PushButton(FluentIcon.SYNC, "檢查更新", self.action_card)
         self.btn_refresh.setFixedHeight(38)
-        self.btn_refresh.clicked.connect(self.refresh_status)
+        self.btn_refresh.setToolTip("重新掃描遊戲目錄並檢查 GitHub 雲端模組是否有新版本")
+        self.btn_refresh.clicked.connect(lambda: self.refresh_status(check_git=True))
 
         # 清除模組按鈕
         self.btn_uninstall = PushButton(FluentIcon.DELETE, "清除模組", self.action_card)
@@ -293,7 +322,7 @@ class MainWindow(QWidget):
 
         self.tree_mods = TreeWidget(self.list_card)
         self.tree_mods.setColumnCount(5)
-        self.tree_mods.setHeaderLabels(["模組名稱 (可勾選安裝)", "版本", "類型", "當前狀態", "目標相對路徑"])
+        self.tree_mods.setHeaderLabels(["模組名稱 (可勾選安裝)", "最新版本", "類型", "當前版本狀態", "目標相對路徑"])
         self.tree_mods.setFont(get_app_font(9, False))
         self.tree_mods.setIndentation(18)
         self.tree_mods.setRootIsDecorated(True)
@@ -304,7 +333,7 @@ class MainWindow(QWidget):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(4, QHeaderView.Stretch)  # 最後一欄 Stretch 填滿畫面
-        self.tree_mods.setColumnWidth(0, 290)
+        self.tree_mods.setColumnWidth(0, 280)
 
         list_layout.addWidget(self.tree_mods, 1)
         self.list_card.hide()
@@ -326,9 +355,19 @@ class MainWindow(QWidget):
             f"color: {accent_color}; background: {get_state_color('card_sub_bg')}; "
             f"border: 1px solid {get_state_color('border')}; border-radius: 6px; padding: 2px 8px;"
         )
+        self._style_git_badge(mod_manager.get_last_git_status().get("badge_state", "muted"))
         self.lbl_game_path.setStyleSheet(f"color: {muted_color};")
         self.lbl_action_title.setStyleSheet(f"color: {text_color}; font-weight: 700;")
         self.lbl_action_sub.setStyleSheet(f"color: {muted_color};")
+
+    def _style_git_badge(self, state_key: str = "muted"):
+        fg = get_state_color(state_key)
+        bg = get_state_color("card_sub_bg")
+        border = get_state_color("border")
+        self.lbl_git_badge.setStyleSheet(
+            f"color: {fg}; background: {bg}; border: 1px solid {border}; "
+            f"border-radius: 6px; padding: 2px 8px; font-weight: 600;"
+        )
 
     def on_toggle_theme(self):
         if isDarkTheme():
@@ -336,7 +375,60 @@ class MainWindow(QWidget):
         else:
             setTheme(Theme.DARK)
         self._apply_adaptive_theme()
-        self.refresh_status()
+        self.refresh_status(check_git=False)
+
+    # =========================================================================
+    # 開啟程式自動檢查 Git 版本狀態
+    # =========================================================================
+
+    def start_git_version_check(self, is_startup: bool = False):
+        """啟動非阻塞背景執行緒檢查 GitHub 遠端倉庫與模組版本更新狀況"""
+        if self.git_worker is not None and self.git_worker.isRunning():
+            return
+
+        self.lbl_git_badge.setText("🔄 檢查 Git 版本中...")
+        self._style_git_badge("accent")
+        self.lbl_action_title.setText("🔍 正在檢查 Git 雲端版本與模組更新狀態...")
+        self.lbl_action_sub.setText("正在連線至 GitHub (JiaSai67/modsloader-runescape) 比對最新模組版本...")
+
+        self.git_worker = GitCheckWorker(self.game_path, is_startup=is_startup)
+        self.git_worker.finished_signal.connect(self._on_git_check_finished)
+        self.git_worker.start()
+
+    def _on_git_check_finished(self, git_status: dict, is_startup: bool):
+        self.lbl_git_badge.setText(git_status.get("badge_text", "🟢 Git 已就緒"))
+        self._style_git_badge(git_status.get("badge_state", "success"))
+
+        self.lbl_action_title.setText(git_status.get("summary_title", "☁️ 雲端 Git 模組庫已就緒"))
+        self.lbl_action_sub.setText(git_status.get("summary_detail", ""))
+
+        # 重新刷新本地卡片與樹狀清單，以反映最新雲端模組版本比對結果
+        self.refresh_status(check_git=False)
+
+        pending = git_status.get("total_pending_updates", 0)
+        if pending > 0:
+            self.btn_install.setText(f"一鍵更新並同步模組 ({pending})")
+            InfoBar.warning(
+                title="發現模組版本更新",
+                content=f"檢測到共有 {pending} 項模組有新版本可更新，點擊「一鍵更新並同步模組」即可完成升級！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=5000,
+                parent=self,
+            )
+        else:
+            self.btn_install.setText("一鍵同步並安裝模組")
+            if not is_startup and git_status.get("online"):
+                InfoBar.success(
+                    title="Git 版本狀態最新",
+                    content=f"已確認與 GitHub 遠端倉庫 ({git_status.get('remote_commit', '')}) 同步，所有模組皆為最新版本。",
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=3000,
+                    parent=self,
+                )
 
     # =========================================================================
     # 展開 / 收合詳細模組清單
@@ -369,7 +461,7 @@ class MainWindow(QWidget):
     # 狀態檢測與清單渲染
     # =========================================================================
 
-    def refresh_status(self):
+    def refresh_status(self, check_git: bool = False):
         # 記住目前已取消勾選的項目
         unchecked_files = self._get_unchecked_filenames()
 
@@ -390,24 +482,31 @@ class MainWindow(QWidget):
             self.card_stat_game.set_status("🔴 未找到遊戲目錄", "error")
 
         # 2. 更新固定版 UE4SS 狀態
-        if st["ue4ss_installed"]:
+        if st.get("ue4ss_has_update"):
+            self.card_stat_ue4ss.set_status(f"🟡 可更新 (v{st['ue4ss_version']})", "warning")
+        elif st["ue4ss_installed"]:
             self.card_stat_ue4ss.set_status(f"🟢 已安裝 (v{st['ue4ss_version']})", "success")
         else:
             self.card_stat_ue4ss.set_status(f"🔴 未安裝 (v{st['ue4ss_version']})", "error")
 
         # 3. 更新固定版 RuneSchema 狀態
-        if st["runeschema_installed"]:
+        if st.get("runeschema_has_update"):
+            self.card_stat_rs.set_status(f"🟡 可更新 (v{st['runeschema_version']})", "warning")
+        elif st["runeschema_installed"]:
             self.card_stat_rs.set_status(f"🟢 已安裝 (v{st['runeschema_version']})", "success")
         else:
             self.card_stat_rs.set_status(f"🔴 未安裝 (v{st['runeschema_version']})", "error")
 
-        # 4. 更新擴充模組安裝狀態
+        # 4. 更新擴充模組安裝與版本狀態
         inst_add = st["installed_addons"]
         tot_add = st["total_addons"]
+        upd_add = st.get("updatable_addons", 0)
         if not st["game_valid"]:
             self.card_stat_mods.set_status(f"⚪ 待定位 (0 / {tot_add})", "muted")
+        elif upd_add > 0:
+            self.card_stat_mods.set_status(f"🟡 {upd_add} 項可更新 ({inst_add}/{tot_add})", "warning")
         elif inst_add == tot_add and tot_add > 0:
-            self.card_stat_mods.set_status(f"🟢 全部就緒 ({inst_add} / {tot_add})", "success")
+            self.card_stat_mods.set_status(f"🟢 全部最新 ({inst_add} / {tot_add})", "success")
         elif inst_add > 0:
             self.card_stat_mods.set_status(f"🟡 部分安裝 ({inst_add} / {tot_add})", "warning")
         else:
@@ -420,6 +519,9 @@ class MainWindow(QWidget):
 
         # 5. 重新渲染詳細模組樹狀清單
         self._populate_tree(st["items"], unchecked_files)
+
+        if check_git:
+            self.start_git_version_check(is_startup=False)
 
     def _populate_tree(self, items: List[dict], unchecked_files: set):
         self.tree_mods.clear()
@@ -436,8 +538,17 @@ class MainWindow(QWidget):
         text_brush = QBrush(QColor(get_state_color("text")))
         muted_brush = QBrush(QColor(get_state_color("muted")))
         succ_brush = QBrush(QColor(get_state_color("success")))
+        warn_brush = QBrush(QColor(get_state_color("warning")))
         err_brush = QBrush(QColor(get_state_color("error")))
         accent_brush = QBrush(QColor(get_state_color("accent")))
+
+        state_brush_map = {
+            "success": succ_brush,
+            "warning": warn_brush,
+            "error": err_brush,
+            "muted": muted_brush,
+            "accent": accent_brush,
+        }
 
         for cat_key, cat_title in categories:
             cat_items = [m for m in items if m["category"] == cat_key]
@@ -445,8 +556,11 @@ class MainWindow(QWidget):
                 continue
 
             inst_in_cat = sum(1 for m in cat_items if m["installed"])
+            upd_in_cat = sum(1 for m in cat_items if m.get("has_update", False))
+            upd_suffix = f" · 🟡 {upd_in_cat} 項可更新" if upd_in_cat > 0 else ""
+
             cat_node = QTreeWidgetItem(self.tree_mods)
-            cat_node.setText(0, f"{cat_title} ({inst_in_cat}/{len(cat_items)})")
+            cat_node.setText(0, f"{cat_title} ({inst_in_cat}/{len(cat_items)}{upd_suffix})")
             cat_node.setFont(0, get_app_font(9, True))
             cat_node.setForeground(0, accent_brush)
             cat_node.setFirstColumnSpanned(False)
@@ -456,10 +570,14 @@ class MainWindow(QWidget):
                 row_node.setData(0, Qt.UserRole, m["filename"])
                 row_node.setData(0, Qt.UserRole + 1, m["is_core"])
 
+                latest_v = m.get("latest_version") or m["version"]
+                status_text = m.get("status_text") or ("🟢 已安裝" if m["installed"] else "⚪ 未安裝")
+                status_state = m.get("status_state", "success" if m["installed"] else "error")
+
                 row_node.setText(0, m["name"])
-                row_node.setText(1, f"v{m['version']}")
+                row_node.setText(1, f"v{latest_v}")
                 row_node.setText(2, m["category"])
-                row_node.setText(3, "🟢 已安裝" if m["installed"] else "⚪ 未安裝")
+                row_node.setText(3, status_text)
                 row_node.setText(4, m["target_rel"])
 
                 # 勾選框設定：核心框架固定鎖定勾選，擴充模組可自由勾選
@@ -475,9 +593,9 @@ class MainWindow(QWidget):
                     row_node.setBackground(col, bg_brush)
 
                 row_node.setForeground(0, text_brush)
-                row_node.setForeground(1, muted_brush)
+                row_node.setForeground(1, warn_brush if m.get("has_update") else muted_brush)
                 row_node.setForeground(2, muted_brush)
-                row_node.setForeground(3, succ_brush if m["installed"] else err_brush)
+                row_node.setForeground(3, state_brush_map.get(status_state, muted_brush))
                 row_node.setForeground(4, muted_brush)
 
         # 預設全展開所有分類節點
@@ -537,7 +655,7 @@ class MainWindow(QWidget):
             cfg = mod_manager.load_config()
             cfg["game_path"] = self.game_path
             mod_manager.save_config(cfg)
-            self.refresh_status()
+            self.refresh_status(check_git=True)
 
             if mod_manager.is_valid_game_dir(self.game_path):
                 InfoBar.success(
@@ -595,7 +713,7 @@ class MainWindow(QWidget):
 
         self.progress_bar.setValue(0)
         self.progress_bar.show()
-        self.lbl_action_title.setText("⏳ 正在從 Git 同步並部署模組...")
+        self.lbl_action_title.setText("⏳ 正在從 Git 同步並部署最新模組版本...")
 
         self.worker = InstallWorker(
             game_path=self.game_path,
@@ -616,14 +734,18 @@ class MainWindow(QWidget):
         self.btn_refresh.setEnabled(True)
         self.btn_browse.setEnabled(True)
 
-        self.refresh_status()
+        self.refresh_status(check_git=False)
+        git_st = mod_manager.get_last_git_status()
+        self.lbl_git_badge.setText(git_st.get("badge_text", "🟢 Git 已是最新"))
+        self._style_git_badge(git_st.get("badge_state", "success"))
+        self.btn_install.setText("一鍵同步並安裝模組")
 
         if ok:
-            self.lbl_action_title.setText(f"✅ 模組同步與安裝完成 ({cnt}/{tot})")
-            self.lbl_action_sub.setText("所有核心框架 (UE4SS + RuneSchema) 與擴充模組均已配置完畢，可直接啟動遊戲！")
+            self.lbl_action_title.setText(f"✅ 模組同步與版本更新完成 ({cnt}/{tot})")
+            self.lbl_action_sub.setText("所有核心框架 (UE4SS + RuneSchema) 與擴充模組均已更新至最新版本，可直接啟動遊戲！")
             InfoBar.success(
-                title="安裝成功",
-                content=f"已成功同步並安裝 {cnt} / {tot} 項套件與模組！",
+                title="安裝與更新成功",
+                content=f"已成功同步並更新 {cnt} / {tot} 項套件與模組！",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
@@ -667,7 +789,7 @@ class MainWindow(QWidget):
             return
 
         ok, msg = mod_manager.uninstall_all_mods(self.game_path)
-        self.refresh_status()
+        self.refresh_status(check_git=False)
         if ok:
             self.lbl_action_title.setText("🧹 已還原純淨遊戲目錄")
             self.lbl_action_sub.setText(msg)

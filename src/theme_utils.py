@@ -81,3 +81,4 @@ def get_rounded_pixmap(src_pixmap: QPixmap, size: int, radius_ratio: float = 0.2
     painter.drawPixmap(x, y, scaled)
     painter.end()
     return dest
+

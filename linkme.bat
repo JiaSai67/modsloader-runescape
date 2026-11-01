@@ -1,16 +1,17 @@
 @echo off
 chcp 65001 >nul
-set CWD=%~dp0
-if "%CWD:~-1%"=="\" set CWD=%CWD:~0,-1%
+title 註冊 MLRS (ModsLoader - RuneScapes) 至 AI Tool Launcher
 
-:: Define Project Name and Description here
-set PROJECT_NAME=modsloader - runescape
-set PROJECT_DESC=RuneScape: Dragonwilds 一鍵 Git 同步模組安裝器 (固定整合 UE4SS 3.0.1 與 RuneSchema 0.8.0.3)
-set EXEC_FILE=%CWD%\main.py
+set "LAUNCHER_API=g:\python\toolLauncher\register_api.py"
+set "TOOL_ENTRY=%~dp0main.py"
 
-echo Registering "%PROJECT_NAME%" to AI Tool Launcher...
-python g:\python\toolLauncher\register_api.py --name "%PROJECT_NAME%" --desc "%PROJECT_DESC%" --exec "%EXEC_FILE%" --cwd "%CWD%"
+if not exist "%LAUNCHER_API%" (
+    echo [錯誤] 找不到啟動器註冊介面: %LAUNCHER_API%
+    pause
+    exit /b 1
+)
 
+python "%LAUNCHER_API%" --path "%TOOL_ENTRY%" --name "MLRS (ModsLoader - RuneScapes)" --desc "RuneScape: Dragonwilds 現代化 Git 模組同步與版本更新安裝器 v1.0.0 (自動檢查 Git 版本、固定版 UE4SS + RuneSchema 與 28 款模組一鍵更新)"
 echo.
-echo Registration complete! You can now close this window.
+echo [完成] 已成功向 AI Tool Launcher 註冊 MLRS (ModsLoader - RuneScapes) v1.0.0！
 pause

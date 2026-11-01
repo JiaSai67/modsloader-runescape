@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-modsloader - runescape
-RuneScape: Dragonwilds 現代化極簡 Git 模組同步安裝器主程式入口
+MLRS (ModsLoader - RuneScapes)
+RuneScape: Dragonwilds 現代化極簡 Git 模組同步與版本更新安裝器主程式入口
 符合 AIToolLauncher 專案開發標準 (AI Tool Standard)
 """
 
@@ -10,7 +10,7 @@ import sys
 import ctypes
 from pathlib import Path
 
-# Windows CP950 終端編碼保護与 pythonw 無控制台防護
+# Windows CP950 終端編碼保護與 pythonw 無控制台防護
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w", encoding="utf-8")
 elif hasattr(sys.stdout, "reconfigure"):
@@ -31,20 +31,21 @@ ROOT_DIR = Path(__file__).resolve().parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-VERSION = "2.0.0"
-__version__ = "2.0.0"
+APP_NAME = "MLRS (ModsLoader - RuneScapes)"
+VERSION = "1.0.0"
+__version__ = "1.0.0"
 
 # 註冊專屬 Windows AppUserModelID，確保工作列顯示專屬 Dragonwilds 圖標
 if sys.platform == "win32":
     try:
-        myappid = "jiasai.modsloader.runescape.v2"
+        myappid = "jiasai.mlrs.modsloader.runescape.v1"
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except Exception:
         pass
 
 
 def main():
-    print(f"Starting modsloader - runescape v{VERSION}...")
+    print(f"Starting {APP_NAME} v{VERSION}...")
     from PySide6.QtWidgets import QApplication
     from PySide6.QtGui import QIcon
     from src.main_window import MainWindow

@@ -1,18 +1,21 @@
-# modsloader - runescape (v2.0.0)
+# MLRS (ModsLoader - RuneScapes) v1.0.0
 
-**RuneScape: Dragonwilds 現代化極簡 Git 模組同步安裝器**
+**RuneScape: Dragonwilds** 現代化極簡 Git 雲端模組同步、版本更新檢查與一鍵安裝器（符合 AI Tool Standard 規範）。
 
-專為《RuneScape: Dragonwilds》打造的極簡化一鍵模組同步與安裝工具，符合 `AIToolLauncher` 標準規範。
+## 核心功能
+- **開啟自動檢查 Git 版本狀況**：啟動程式時於背景非阻塞檢查 GitHub 遠端儲存庫 (`JiaSai67/modsloader-runescape`) 最新 Commit SHA 與雲端 `mods/` 模組版本清單。
+- **模組版本更新追蹤機制**：透過 `mlrs_installed_versions.json` 記錄遊戲目錄內已安裝的各模組版本，自動比對雲端與本地最新壓縮檔版本，於介面標示 `🟡 可更新 (v舊 → v新)`，並於同步時自動淘汰舊版壓縮檔。
+- **固定雙核心優先部署**：
+  - `UE4SS Steam (latest)` (`v3.0.1-gf6d5f942`)
+  - `RuneSchema (Steam)` (`v0.8.0.3`)
+- **四階段智慧模組安裝引擎**：
+  1. `RSDragonwilds` 根目錄結構直通合併（自動過濾外部說明檔，並保留既有 `mods.txt` 設定）
+  2. `RuneSchema` 數據載入器模組（`assets`, `blueprints`, `raw` 等自動部署至 `ue4ss/Mods/RuneSchema/mods/` 並寫入 `runeschema.txt`）
+  3. Unreal Engine 5.6 `Pak` 資源模組（自動部署 `.pak` / `.ucas` / `.utoc` 至 `RSDragonwilds/Content/Paks/~mods/`）
+  4. `UE4SS` Lua 腳本模組（自動部署至 `ue4ss/Mods/<ModName>/`，建立 `enabled.txt` 並啟用於 `mods.txt`）
+- **極簡 Fluent 介面**：支援系統深淺色主題自動適配、4 宮格狀態確認卡片與可展開/收合的 30 項分類樹狀模組清單。
 
-## ✨ 核心特色
-
-- **極簡化 Fluent 介面**：僅保留最關鍵的「四格狀態確認」、「一鍵同步並安裝按鈕」與「可展開 / 收合的詳細模組清單」，支援 Windows 11 深色 / 淺色主題自動適配。
-- **Git 雲端壓縮檔直裝 (方案 B)**：所有模組壓縮檔（`.zip` / `.rar`）原封不動存放於 Git 倉庫的 `mods/` 目錄，工具點擊安裝時自動同步並解壓部署。
-- **雙核心固定版本優先部署**：
-  1. **UE4SS Steam (latest)**：`v3.0.1-gf6d5f942` (`UE4SS Steam (latest) 4 3.0.1-gf6d5f942 2026-09-16T16-30Z xEKUeeFss`)
-  2. **RuneSchema (Steam)**：`v0.8.0.3` (`RuneSchema (Steam) 570 0.8.0.3 2026-10-30T20-06Z AMadvv1Fj`)
-- **四階段智慧模組識別引擎**：
-  - 自動識別含外層包裝目錄的 `RSDragonwilds` 結構（避免破壞 `RuneSchema` 內建插件 Pak）。
-  - 自動識別 `RuneSchema` JSON 數據模組（如 `BuffDuration10x`、`Extended Enemy Drops`）並安裝至 `ue4ss/Mods/RuneSchema/mods/`。
-  - 自動分類安裝 `.pak/.ucas/.utoc` 模組至 `Content/Paks/~mods/`。
-  - 自動安裝 UE4SS Lua 模組至 `ue4ss/Mods/` 並同步寫入 `mods.txt` 與 `enabled.txt`。
+## 啟動方式
+```bash
+python main.py
+```
