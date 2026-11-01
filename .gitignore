@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.scratch/
+.tmp/
+config.json
+*.log
+0711mods/
+1101mods/
+app/
