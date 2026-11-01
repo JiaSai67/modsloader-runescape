@@ -231,6 +231,12 @@ MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
         "zh_desc": "所有可堆疊物品的單格堆疊上限提升為 50 倍（最高 9,999 個），且所有堆疊物資重量設為 0，大幅釋放背包與箱子空間。",
         "has_in_game_text": False,
     },
+    "name:unlockdifficultylimits": {
+        "zh_name": "世界難度上限解鎖器",
+        "en_name": "Unlock Difficulty Limits",
+        "zh_desc": "解除建立世界時所有自訂難度滑桿的 3.0 最大值上限 (預設提升至 100.0x)，級距大幅細化支援小數精準調節，並解除建立世界後之修改限制。",
+        "has_in_game_text": True,
+    },
 }
 
 # 已正式下架淘汰的衝突/冗餘模組清單（同步與安裝時會自動從本地 mods/ 與遊戲目錄清除殘留）
@@ -463,6 +469,8 @@ def get_mod_identity_key(filename: str) -> str:
     if mod_id:
         return f"nexus:{mod_id}"
     norm_name = re.sub(r"[^a-z0-9]+", "_", clean_name.lower()).strip("_")
+    if "unlockdifficultylimits" in norm_name or "unlock_difficulty_limits" in norm_name:
+        return "name:unlockdifficultylimits"
     return f"name:{norm_name}"
 
 
@@ -928,7 +936,7 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
     mods_dir = get_mods_source_dir()
 
     headers = {
-        "User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.2",
+        "User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.3",
         "Accept": "application/vnd.github.v3+json",
     }
 
@@ -953,7 +961,7 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
                 local_f = mods_dir / r_name
                 if not local_f.exists() or local_f.stat().st_size != r_size:
                     _report(14, f"正在從 GitHub 下載更新模組: {r_name}...")
-                    dl_req = urllib.request.Request(dl_url, headers={"User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.2"})
+                    dl_req = urllib.request.Request(dl_url, headers={"User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.3"})
                     with urllib.request.urlopen(dl_req, timeout=30) as dl_resp:
                         with open(local_f, "wb") as out_f:
                             out_f.write(dl_resp.read())
@@ -1668,6 +1676,24 @@ def install_single_archive(archive_path: str, game_path: str, mod_info: Optional
 # =========================================================================
 
 MODMENU_TRANSLATIONS: Dict[str, Dict] = {
+    "UnlockDifficultyLimits": {
+        "name": "世界難度上限解鎖器 (Unlock Difficulty Limits)",
+        "description": "解除世界自訂難度滑桿的 3.0 最大值上限 (預設提升至 100.0x)，級距大幅細化支援小數精準調節，並解除建立世界後之修改限制。",
+        "settings": {
+            "MaxSliderValue": {
+                "label": "難度滑桿最大上限",
+                "tooltip": "設定建立世界介面中自訂難度滑桿的最大上限值 (預設 100.0，支援更高數值)。",
+            },
+            "DecimalPlaces": {
+                "label": "小數精確位數",
+                "tooltip": "設定滑桿調節時的小數位數 (預設 2 位小數，可進行微調)。",
+            },
+            "UnlockPostCreationEdit": {
+                "label": "解鎖建立世界後之修改限制",
+                "tooltip": "解除遊戲中各項規則在建立世界後無法修改的限制。",
+            },
+        },
+    },
     "DontReplant": {
         "name": "農作收成自動免費重播種 (Don't Replant)",
         "description": "農作物收成後會自動保留在農地中並免費重新播種。澆水、堆肥與病害機制維持原版規則（多人連線僅需房主安裝）。",

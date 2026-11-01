@@ -110,7 +110,7 @@ class MainWindow(QWidget):
     EXPANDED_HEIGHT = 780
     WINDOW_WIDTH = 1060
 
-    def __init__(self, version: str = "1.0.2"):
+    def __init__(self, version: str = "1.0.3"):
         super().__init__()
         self.version = version
         # 預設展開完整模組清單，讓使用者開啟即一覽全部 27 項零衝突繁中模組與說明
@@ -267,6 +267,12 @@ class MainWindow(QWidget):
         self.btn_refresh.setToolTip("重新掃描遊戲目錄並檢查 GitHub 雲端模組是否有新版本")
         self.btn_refresh.clicked.connect(lambda: self.refresh_status(check_git=True))
 
+        # 世界存檔自訂難度設定編輯器
+        self.btn_save_editor = PushButton(FluentIcon.SETTING, "世界存檔設定", self.action_card)
+        self.btn_save_editor.setFixedHeight(36)
+        self.btn_save_editor.setToolTip("自訂世界存檔設定 (突破 3.0 最大值上限、自訂輸入各項倍率、無建築穩定性免支撐搭建)")
+        self.btn_save_editor.clicked.connect(self.on_open_save_editor)
+
         # 清除模組按鈕
         self.btn_uninstall = PushButton(FluentIcon.DELETE, "清除模組", self.action_card)
         self.btn_uninstall.setFixedHeight(36)
@@ -281,6 +287,7 @@ class MainWindow(QWidget):
         self.btn_install.clicked.connect(self.on_start_install)
 
         top_action_row.addWidget(self.btn_refresh)
+        top_action_row.addWidget(self.btn_save_editor)
         top_action_row.addWidget(self.btn_uninstall)
         top_action_row.addWidget(self.btn_install)
         action_layout.addLayout(top_action_row)
@@ -1000,6 +1007,23 @@ class MainWindow(QWidget):
                 position=InfoBarPosition.TOP,
                 duration=5000,
                 parent=self,
+            )
+
+    def on_open_save_editor(self):
+        """開啟世界存檔自訂難度設定對話框"""
+        try:
+            from src.save_editor_window import SaveEditorDialog
+            dlg = SaveEditorDialog(self)
+            dlg.exec()
+        except Exception as e:
+            InfoBar.error(
+                title="開啟存檔編輯器失敗",
+                content=str(e),
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=5000,
+                parent=self
             )
 
     def closeEvent(self, event):

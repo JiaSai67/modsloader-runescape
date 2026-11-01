@@ -32,8 +32,8 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 APP_NAME = "MLRS (ModsLoader - RuneScapes)"
-VERSION = "1.0.2"
-__version__ = "1.0.2"
+VERSION = "1.0.3"
+__version__ = "1.0.3"
 
 # 註冊專屬 Windows AppUserModelID，確保工作列顯示專屬 Dragonwilds 圖標
 if sys.platform == "win32":
