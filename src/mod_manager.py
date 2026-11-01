@@ -66,7 +66,7 @@ UE4SS_BUILTINS = {
 }
 
 # =========================================================================
-# 完整 30 項模組繁體中文圖鑑與功能說明資料庫 (MOD_CATALOG_METADATA)
+# 精選 27 項零衝突・零輪詢模組繁體中文圖鑑與功能說明資料庫 (MOD_CATALOG_METADATA)
 # =========================================================================
 MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
     "core:ue4ss": {
@@ -90,7 +90,7 @@ MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
     "nexus:838": {
         "zh_name": "多人連線儲物箱超遠距連動",
         "en_name": "ChestLink Multiplayer PC",
-        "zh_desc": "將多人連線與單人模式的已連結儲物箱（Linked Storage）建造與製作讀取範圍擴展至 1,000 公里（按 F7 可手動重整快取）。",
+        "zh_desc": "將多人連線與單人模式的已連結儲物箱（Linked Storage）建造與製作讀取範圍擴展至 1,000 公里（已優化為事件驅動零輪詢架構，絕不造成遊戲卡頓；按 F7 可手動重整快取）。",
         "has_in_game_text": False,
     },
     "nexus:667": {
@@ -138,7 +138,7 @@ MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
     "nexus:557": {
         "zh_name": "全能農耕與探索法術強化",
         "en_name": "Greater Farming",
-        "zh_desc": "擴大堆肥術、濕潤術、碎木術與飛斧投射範圍；縮短裝備法術冷卻 50%；擴大敏捷光球拾取範圍 3 倍；符文祭壇單次製作上限提升至 1,000。",
+        "zh_desc": "擴大堆肥術、濕潤術、碎木術與飛斧投射範圍；擴大敏捷光球拾取範圍 3 倍；符文祭壇單次製作上限提升至 1,000（已移除背景法術冷卻輪詢，改為純事件觸發）。",
         "has_in_game_text": True,
     },
     "nexus:134": {
@@ -156,19 +156,13 @@ MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
     "nexus:574": {
         "zh_name": "返家傳送術無冷卻",
         "en_name": "HomeTeleportNoCooldown",
-        "zh_desc": "移除「返家傳送（Home Teleport）」法術的冷卻時間（預設 0 秒，可於遊戲內 Mod Menu 自訂秒數）。",
+        "zh_desc": "移除「返家傳送（Home Teleport）」法術的冷卻時間（預設 0 秒，可於遊戲內 Mod Menu 自訂秒數，已優化為純事件驅動零輪詢架構）。",
         "has_in_game_text": True,
     },
     "nexus:397": {
         "zh_name": "鏟子瞬間挖掘",
         "en_name": "InstantSpade",
         "zh_desc": "移除使用鏟子（Spade）挖掘地面、農田或樹根時的蓄力與動作等待時間，實現瞬間挖掘。",
-        "has_in_game_text": False,
-    },
-    "nexus:839": {
-        "zh_name": "儲物帳本與工作台連動範圍擴大",
-        "en_name": "LedgerRange",
-        "zh_desc": "將儲物帳本（Storage Ledger）與製作工作台讀取已連結儲物箱的距離從原版 30 公尺擴大至 100 公尺。",
         "has_in_game_text": False,
     },
     "nexus:548": {
@@ -195,12 +189,6 @@ MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
         "zh_desc": "所有武器、防具與採集工具在使用與戰鬥時均不會扣除耐久度，免除頻繁維修裝備的困擾。",
         "has_in_game_text": False,
     },
-    "nexus:367": {
-        "zh_name": "進食與飲水無動作延遲",
-        "en_name": "NoEatingDelay",
-        "zh_desc": "透過 Pak 資產層級移除食用料理與飲水時的動作延遲，可在戰鬥中迅速補充生命值與狀態。",
-        "has_in_game_text": False,
-    },
     "nexus:299": {
         "zh_name": "全法術技能零冷卻時間",
         "en_name": "NoSpellCooldown",
@@ -217,12 +205,6 @@ MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
         "zh_name": "背包一鍵快速堆疊至鄰近箱子",
         "en_name": "QuickStack",
         "zh_desc": "開啟背包時按 Y 鍵（或手把長按 Y）即可將背包物品一鍵快速堆疊至周圍 15 公尺內的箱子；按滑鼠中鍵可鎖定排除特定欄位物品。",
-        "has_in_game_text": True,
-    },
-    "nexus:845": {
-        "zh_name": "遊戲設定自由開關 (零負重/死亡保物/不壞)",
-        "en_name": "RSDSFreedom",
-        "zh_desc": "在遊戲原生的「設定 > 遊戲玩法」選單中新增三個繁體中文開關：「物品無重量」、「死亡時保留物品」、「物品不會損壞」，預設全數啟用。",
         "has_in_game_text": True,
     },
     "nexus:653": {
@@ -248,6 +230,25 @@ MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
         "en_name": "x50 Stacks No Weight",
         "zh_desc": "所有可堆疊物品的單格堆疊上限提升為 50 倍（最高 9,999 個），且所有堆疊物資重量設為 0，大幅釋放背包與箱子空間。",
         "has_in_game_text": False,
+    },
+}
+
+# 已正式下架淘汰的衝突/冗餘模組清單（同步與安裝時會自動從本地 mods/ 與遊戲目錄清除殘留）
+REMOVED_DEPRECATED_MODS: Dict[str, Dict[str, object]] = {
+    "nexus:839": {
+        "name": "LedgerRange",
+        "lua_folders": ["LedgerRange"],
+        "pak_prefixes": [],
+    },
+    "nexus:367": {
+        "name": "NoEatingDelay",
+        "lua_folders": [],
+        "pak_prefixes": ["NoEatingDelay"],
+    },
+    "nexus:845": {
+        "name": "RSDSFreedom",
+        "lua_folders": ["RSDSFreedom"],
+        "pak_prefixes": [],
     },
 }
 
@@ -406,11 +407,11 @@ def detect_game_path() -> str:
 
 
 def get_mods_source_dir() -> Path:
-    """取得存放待安裝壓縮檔的本地目錄 (優先使用 mods/，次選 1101mods/)"""
+    """取得存放待安裝壓縮檔的本地目錄 (優先使用 mods/，次選 1101mods/ 並自動排除已淘汰模組)"""
     mods_dir = ROOT_DIR / "mods"
     fallback_dir = ROOT_DIR / "1101mods"
 
-    # 若 mods/ 不存在或為空，且 1101mods/ 存在，則自動將 1101mods/ 複製初始化至 mods/
+    # 若 mods/ 不存在或為空，且 1101mods/ 存在，則自動將未淘汰項目複製初始化至 mods/
     if fallback_dir.is_dir():
         os.makedirs(mods_dir, exist_ok=True)
         existing = [f for f in os.listdir(mods_dir) if f.lower().endswith((".zip", ".rar", ".7z"))]
@@ -418,7 +419,8 @@ def get_mods_source_dir() -> Path:
             for item in os.listdir(fallback_dir):
                 src_file = fallback_dir / item
                 if src_file.is_file() and item.lower().endswith((".zip", ".rar", ".7z")):
-                    shutil.copy2(src_file, mods_dir / item)
+                    if get_mod_identity_key(item) not in REMOVED_DEPRECATED_MODS:
+                        shutil.copy2(src_file, mods_dir / item)
 
     os.makedirs(mods_dir, exist_ok=True)
     return mods_dir
@@ -501,6 +503,155 @@ def save_installed_version_entry(game_path: str, mod_info: Dict):
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception:
         pass
+
+
+def _remove_entries_from_txt(txt_path: Path, names_to_remove: set):
+    """從 mods.txt 或 runeschema.txt 移除已淘汰或已停用的模組行"""
+    if not txt_path.exists() or not names_to_remove:
+        return
+    lower_remove = {n.lower() for n in names_to_remove}
+    try:
+        lines = txt_path.read_text(encoding="utf-8", errors="ignore").splitlines(keepends=True)
+        kept = []
+        changed = False
+        for line in lines:
+            if ":" in line:
+                key = line.strip().split(":", 1)[0].strip()
+                if key.lower() in lower_remove:
+                    changed = True
+                    continue
+            kept.append(line)
+        if changed:
+            txt_path.write_text("".join(kept), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def count_deprecated_mods_in_game(game_path: str) -> int:
+    """檢測遊戲目錄內是否仍殘留已正式下架淘汰的衝突/冗餘模組"""
+    if not is_valid_game_dir(game_path):
+        return 0
+    gp = Path(game_path)
+    ue4ss_mods = gp / "RSDragonwilds" / "Binaries" / "Win64" / "ue4ss" / "Mods"
+    paks_mods = gp / "RSDragonwilds" / "Content" / "Paks" / "~mods"
+    found = 0
+    for dep_info in REMOVED_DEPRECATED_MODS.values():
+        hit = False
+        for lf in dep_info.get("lua_folders", []):
+            if (ue4ss_mods / lf).exists():
+                hit = True
+        if paks_mods.exists():
+            for pref in dep_info.get("pak_prefixes", []):
+                for p in paks_mods.rglob(f"{pref}*"):
+                    if p.exists():
+                        hit = True
+                        break
+        if hit:
+            found += 1
+    return found
+
+
+def cleanup_removed_mods_from_game(game_path: str, active_mod_keys: Optional[set] = None) -> List[str]:
+    """
+    清理遊戲目錄內已下架淘汰的衝突模組（如 LedgerRange、NoEatingDelay、RSDSFreedom），
+    以及曾記錄於版本帳本但本次不在 active_mod_keys 內的舊模組殘留。
+    """
+    if not is_valid_game_dir(game_path):
+        return []
+
+    gp = Path(game_path)
+    ue4ss_mods = gp / "RSDragonwilds" / "Binaries" / "Win64" / "ue4ss" / "Mods"
+    mods_txt = ue4ss_mods / "mods.txt"
+    rs_txt = ue4ss_mods / "RuneSchema" / "mods" / "runeschema.txt"
+    paks_mods = gp / "RSDragonwilds" / "Content" / "Paks" / "~mods"
+
+    cleaned_names: List[str] = []
+    txt_remove_lua: set = set()
+    txt_remove_rs: set = set()
+
+    # 1. 強制清除已下架的衝突/冗餘模組殘留
+    for dep_key, dep_info in REMOVED_DEPRECATED_MODS.items():
+        removed_this = False
+        dep_name = str(dep_info.get("name", dep_key))
+        for lf in dep_info.get("lua_folders", []):
+            txt_remove_lua.add(lf)
+            target_dir = ue4ss_mods / lf
+            if target_dir.exists():
+                try:
+                    shutil.rmtree(target_dir)
+                    removed_this = True
+                except Exception:
+                    pass
+        if paks_mods.exists():
+            for pref in dep_info.get("pak_prefixes", []):
+                for p in list(paks_mods.rglob(f"{pref}*")):
+                    try:
+                        if p.is_dir():
+                            shutil.rmtree(p)
+                            removed_this = True
+                        elif p.is_file():
+                            p.unlink()
+                            removed_this = True
+                    except Exception:
+                        pass
+        if removed_this and dep_name not in cleaned_names:
+            cleaned_names.append(dep_name)
+
+    # 2. 比對版本帳本 mlrs_installed_versions.json，清除已不在 active_mod_keys 的舊模組
+    ledger = load_installed_versions(game_path)
+    ledger_changed = False
+    for l_key in list(ledger.keys()):
+        if l_key in ("core:ue4ss", "core:runeschema"):
+            continue
+        should_remove = (l_key in REMOVED_DEPRECATED_MODS) or (
+            active_mod_keys is not None and l_key not in active_mod_keys
+        )
+        if not should_remove:
+            continue
+
+        entry = ledger.pop(l_key, {})
+        ledger_changed = True
+        t_rel = str(entry.get("target_rel", "")).replace("\\", "/").strip("/")
+        m_name = str(entry.get("name") or l_key)
+        if t_rel:
+            target_p = gp / t_rel
+            low_rel = t_rel.lower()
+            if "/ue4ss/mods/runeschema/mods/" in low_rel:
+                txt_remove_rs.add(target_p.name)
+                if target_p.is_dir():
+                    shutil.rmtree(target_p, ignore_errors=True)
+                    if m_name not in cleaned_names:
+                        cleaned_names.append(m_name)
+            elif "/ue4ss/mods/" in low_rel:
+                txt_remove_lua.add(target_p.name)
+                if target_p.is_dir():
+                    shutil.rmtree(target_p, ignore_errors=True)
+                    if m_name not in cleaned_names:
+                        cleaned_names.append(m_name)
+            elif low_rel.endswith(".pak") and paks_mods.exists():
+                stem = os.path.splitext(os.path.basename(t_rel))[0]
+                for p in list(paks_mods.rglob(f"{stem}.*")):
+                    if p.is_file():
+                        try:
+                            p.unlink()
+                            if m_name not in cleaned_names:
+                                cleaned_names.append(m_name)
+                        except Exception:
+                            pass
+
+    _remove_entries_from_txt(mods_txt, txt_remove_lua)
+    _remove_entries_from_txt(rs_txt, txt_remove_rs)
+
+    if ledger_changed:
+        ledger_path = os.path.join(game_path, INSTALLED_LEDGER_REL)
+        try:
+            os.makedirs(os.path.dirname(ledger_path), exist_ok=True)
+            with open(ledger_path, "w", encoding="utf-8") as f:
+                json.dump(ledger, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
+    return cleaned_names
 
 
 def get_local_git_commit() -> str:
@@ -650,6 +801,7 @@ def check_git_version_status(game_path: str = "") -> Dict:
 
     git_updates_count = 0
     git_new_count = 0
+    git_removed_count = 0
     if remote_mods_map:
         for r_key, r_info in remote_mods_map.items():
             if r_key not in local_mods_map:
@@ -658,43 +810,49 @@ def check_git_version_status(game_path: str = "") -> Dict:
                 l_fname, l_ver, l_size = local_mods_map[r_key]
                 if l_fname != r_info["filename"] or l_size != r_info["size"] or l_ver != r_info["version"]:
                     git_updates_count += 1
+        for l_key in local_mods_map:
+            if l_key not in remote_mods_map:
+                git_removed_count += 1
 
     # 若本地尚未紀錄 commit SHA，且遠端所有 mods 檔案與本地完全一致，自動對齊 local_sha
-    if online and not local_sha and git_updates_count == 0 and git_new_count == 0 and remote_full_sha:
+    if online and not local_sha and git_updates_count == 0 and git_new_count == 0 and git_removed_count == 0 and remote_full_sha:
         _update_local_git_commit_ref(remote_full_sha)
         local_sha = remote_sha
 
-    # 4. 掃描遊戲目錄內已安裝模組是否有版本更新
+    # 4. 掃描遊戲目錄內已安裝模組是否有版本更新或已淘汰模組待清理
     scanned_items = scan_all_mods(game_path)
     game_updates_count = sum(1 for m in scanned_items if m.get("has_update", False))
+    deprecated_in_game_count = count_deprecated_mods_in_game(game_path)
 
-    git_up_to_date = (git_updates_count == 0 and git_new_count == 0)
+    git_up_to_date = (git_updates_count == 0 and git_new_count == 0 and git_removed_count == 0)
     if online and local_sha and remote_sha and local_sha != remote_sha and not remote_mods_map:
         git_up_to_date = False
 
-    total_pending = git_updates_count + git_new_count + game_updates_count
+    total_pending = git_updates_count + git_new_count + git_removed_count + game_updates_count + deprecated_in_game_count
 
     if not online:
         badge_text = "⚪ Git 離線 (本地模組庫)"
         badge_state = "muted"
         summary_title = "📦 離線模式：使用本地模組庫就緒"
-        summary_detail = "無法連線至 GitHub 檢查遠端狀態，可直接安裝本地現有的 30 項核心與擴充模組。"
+        summary_detail = f"無法連線至 GitHub 檢查遠端狀態，可直接安裝本地現有的 {len(scanned_items)} 項核心與擴充模組。"
     elif total_pending > 0:
         parts = []
-        if git_updates_count > 0 or git_new_count > 0:
-            parts.append(f"雲端 Git 有 {git_updates_count + git_new_count} 項模組更新")
+        if git_updates_count > 0 or git_new_count > 0 or git_removed_count > 0:
+            parts.append(f"雲端 Git 有 {git_updates_count + git_new_count + git_removed_count} 項模組變更")
         if game_updates_count > 0:
             parts.append(f"遊戲內有 {game_updates_count} 項模組可升級新版本")
+        if deprecated_in_game_count > 0:
+            parts.append(f"遊戲內有 {deprecated_in_game_count} 項已淘汰衝突模組待清理")
         detail_str = "、".join(parts)
-        badge_text = f"🟡 發現更新 ({total_pending} 項可更新)"
+        badge_text = f"🟡 發現更新 ({total_pending} 項變更)"
         badge_state = "warning"
         summary_title = f"🔔 發現模組版本更新！({detail_str})"
-        summary_detail = f"遠端最新 Commit: {remote_sha} | 點擊右側「一鍵更新並同步模組」即可拉取最新壓縮檔並升級！"
+        summary_detail = f"遠端最新 Commit: {remote_sha} | 點擊右側「一鍵更新並同步模組」即可同步最新模組並自動清理舊殘留！"
     else:
         badge_text = f"🟢 Git 已是最新 ({remote_sha})"
         badge_state = "success"
         summary_title = f"☁️ Git 雲端模組庫已同步最新 (Commit: {remote_sha})"
-        summary_detail = "經檢查 GitHub 遠端與本地模組版本完全一致，固定版 UE4SS、RuneSchema 與擴充模組均為最新狀態。"
+        summary_detail = "經檢查 GitHub 遠端與本地模組版本完全一致，固定版 UE4SS、RuneSchema 與零衝突擴充模組均為最新狀態。"
 
     _LAST_GIT_STATUS = {
         "checked": True,
@@ -706,6 +864,8 @@ def check_git_version_status(game_path: str = "") -> Dict:
         "remote_app_version": remote_app_ver,
         "git_updates_count": git_updates_count,
         "git_new_count": git_new_count,
+        "git_removed_count": git_removed_count,
+        "deprecated_in_game_count": deprecated_in_game_count,
         "game_updates_count": game_updates_count,
         "total_pending_updates": total_pending,
         "badge_text": badge_text,
@@ -717,7 +877,7 @@ def check_git_version_status(game_path: str = "") -> Dict:
 
 
 # =========================================================================
-# 3. Git 模組庫同步 (Clone / Pull 最新壓縮檔 + 舊版壓縮檔自動汰換)
+# 3. Git 模組庫同步 (Clone / Pull 最新壓縮檔 + 舊版與已下架壓縮檔自動汰換)
 # =========================================================================
 
 def _cleanup_outdated_local_archives(mods_dir: Path, new_filename: str):
@@ -736,10 +896,27 @@ def _cleanup_outdated_local_archives(mods_dir: Path, new_filename: str):
                 pass
 
 
+def _prune_removed_remote_archives(mods_dir: Path, valid_remote_keys: set) -> int:
+    """移除本地 mods/ 中已被遠端 Git 下架刪除的舊壓縮檔"""
+    if not valid_remote_keys:
+        return 0
+    removed_cnt = 0
+    for f in list(os.listdir(mods_dir)):
+        if not f.lower().endswith((".zip", ".rar", ".7z")):
+            continue
+        if get_mod_identity_key(f) not in valid_remote_keys:
+            try:
+                (mods_dir / f).unlink()
+                removed_cnt += 1
+            except Exception:
+                pass
+    return removed_cnt
+
+
 def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] = None) -> Tuple[bool, str]:
     """
     從 GitHub (JiaSai67/modsloader-runescape) 同步最新模組壓縮檔至本地 mods/ 目錄。
-    - 優先透過 GitHub REST API 智慧比對遠端 mods/ 清單，僅下載有更新或新增的壓縮檔，並自動淘汰同模組舊版檔案。
+    - 優先透過 GitHub REST API 智慧比對遠端 mods/ 清單，僅下載有更新或新增的壓縮檔，並自動淘汰同模組舊版與已下架檔案。
     - 備援使用 git fetch / checkout 或暫存區 git clone --depth 1。
     """
     def _report(pct: int, msg: str):
@@ -751,7 +928,7 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
     mods_dir = get_mods_source_dir()
 
     headers = {
-        "User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.0",
+        "User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.2",
         "Accept": "application/vnd.github.v3+json",
     }
 
@@ -765,21 +942,25 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
 
         if isinstance(remote_items, list):
             updated_cnt = 0
+            valid_remote_keys = set()
             for r_item in remote_items:
                 r_name = r_item.get("name", "")
                 r_size = r_item.get("size", 0)
                 dl_url = r_item.get("download_url", "")
                 if not r_name.lower().endswith((".zip", ".rar", ".7z")) or not dl_url:
                     continue
+                valid_remote_keys.add(get_mod_identity_key(r_name))
                 local_f = mods_dir / r_name
                 if not local_f.exists() or local_f.stat().st_size != r_size:
                     _report(14, f"正在從 GitHub 下載更新模組: {r_name}...")
-                    dl_req = urllib.request.Request(dl_url, headers={"User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.0"})
+                    dl_req = urllib.request.Request(dl_url, headers={"User-Agent": "MLRS-ModsLoader-RuneScapes/1.0.2"})
                     with urllib.request.urlopen(dl_req, timeout=30) as dl_resp:
                         with open(local_f, "wb") as out_f:
                             out_f.write(dl_resp.read())
                     _cleanup_outdated_local_archives(mods_dir, r_name)
                     updated_cnt += 1
+
+            pruned_cnt = _prune_removed_remote_archives(mods_dir, valid_remote_keys)
 
             # 同步更新本地記錄的遠端 Commit SHA
             try:
@@ -792,8 +973,13 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
             except Exception:
                 pass
 
-            if updated_cnt > 0:
-                return True, f"已從 GitHub 雲端更新 {updated_cnt} 項新版模組壓縮檔"
+            if updated_cnt > 0 or pruned_cnt > 0:
+                msg_parts = []
+                if updated_cnt > 0:
+                    msg_parts.append(f"更新 {updated_cnt} 項新版模組壓縮檔")
+                if pruned_cnt > 0:
+                    msg_parts.append(f"移除 {pruned_cnt} 項已淘汰衝突模組壓縮檔")
+                return True, "已從 GitHub 雲端" + "、".join(msg_parts)
             return True, "GitHub 雲端模組版本檢查完畢 (本地已是最新版本)"
     except Exception:
         pass
@@ -841,12 +1027,15 @@ def sync_mods_from_git(progress_callback: Optional[Callable[[int, str], None]] =
                 if remote_mods.is_dir():
                     _report(16, "正在同步雲端模組壓縮檔至本地...")
                     synced = 0
+                    valid_remote_keys = set()
                     for item in os.listdir(remote_mods):
                         src_f = remote_mods / item
                         if src_f.is_file() and item.lower().endswith((".zip", ".rar", ".7z")):
+                            valid_remote_keys.add(get_mod_identity_key(item))
                             shutil.copy2(src_f, mods_dir / item)
                             _cleanup_outdated_local_archives(mods_dir, item)
                             synced += 1
+                    _prune_removed_remote_archives(mods_dir, valid_remote_keys)
                     return True, f"已從 GitHub 成功同步 {synced} 個模組壓縮檔"
     except Exception:
         pass
@@ -2081,10 +2270,10 @@ def install_all_mods(
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> Tuple[bool, str, int, int]:
     """
-    一鍵執行完整同步、安裝與文本漢化流程：
-    1. 從 Git 同步最新壓縮檔至本地 mods/
-    2. 強制優先安裝固定版 UE4SS 與 RuneSchema
-    3. 依序安裝所有勾選的擴充模組並寫入版本帳本
+    一鍵執行完整同步、淘汰清理、安裝與文本漢化流程：
+    1. 從 Git 同步最新壓縮檔至本地 mods/（並移除雲端已下架壓縮檔）
+    2. 自動清理遊戲目錄內已下架淘汰的衝突模組（LedgerRange / NoEatingDelay / RSDSFreedom）與取消勾選項目
+    3. 強制優先安裝固定版 UE4SS 與 RuneSchema，並依序安裝所有勾選的擴充模組
     4. 一鍵安裝期間自動完成所有遊戲內模組介面與 Mod Menu 設定選單繁體中文化
     回傳 (success, summary_msg, installed_count, total_count)
     """
@@ -2094,6 +2283,18 @@ def install_all_mods(
 
     if not is_valid_game_dir(game_path):
         return False, "遊戲路徑無效，請先確認 RSDragonwilds 安裝目錄！", 0, 0
+
+    # 在同步 Git 之前先計算「使用者明確取消勾選的 mod_key 集合」，
+    # 確保同步後即使某模組升版改了壓縮檔名，或雲端有新增模組，都能正確命中安裝！
+    unchecked_keys: set = set()
+    if selected_filenames is not None:
+        selected_keys_before = {get_mod_identity_key(fn) for fn in selected_filenames}
+        mods_dir_before = get_mods_source_dir()
+        for existing_f in os.listdir(mods_dir_before):
+            if existing_f.lower().endswith((".zip", ".rar", ".7z")):
+                k = get_mod_identity_key(existing_f)
+                if k not in ("core:ue4ss", "core:runeschema") and k not in selected_keys_before:
+                    unchecked_keys.add(k)
 
     # Step 1: 同步 Git
     git_msg = ""
@@ -2106,11 +2307,18 @@ def install_all_mods(
         return False, "mods 目錄中沒有找到任何模組壓縮檔！", 0, 0
 
     if selected_filenames is not None:
-        selected_set = set(selected_filenames)
-        # 核心框架 (UE4SS & RuneSchema) 永遠強制納入安裝以保障環境完整
-        target_mods = [m for m in all_mods if m["is_core"] or m["filename"] in selected_set]
+        # 核心框架 (UE4SS & RuneSchema) 永遠強制納入安裝；其餘只要不在取消勾選清單內皆納入安裝
+        target_mods = [m for m in all_mods if m["is_core"] or m["mod_key"] not in unchecked_keys]
     else:
         target_mods = all_mods
+
+    # Step 2.5: 自動清除遊戲目錄中已下架淘汰的衝突模組與未勾選模組殘留
+    active_keys = {m["mod_key"] for m in target_mods}
+    _report(18, "正在自動清理遊戲目錄中已淘汰或未勾選的舊模組殘留...")
+    cleaned_deprecated = cleanup_removed_mods_from_game(game_path, active_mod_keys=active_keys)
+    clean_msg = ""
+    if cleaned_deprecated:
+        clean_msg = f"已自動從遊戲目錄移除 {len(cleaned_deprecated)} 項已淘汰/取消勾選模組 ({', '.join(cleaned_deprecated)})。"
 
     total = len(target_mods)
     success_count = 0
@@ -2147,7 +2355,14 @@ def install_all_mods(
         pass
 
     _report(100, f"安裝與漢化完成！成功部署 {success_count}/{total} 項套件與模組。")
-    summary_parts = [p for p in (git_msg, f"成功安裝與更新 {success_count} / {total} 項套件與擴充模組！", trans_msg) if p]
+    summary_parts = [
+        p for p in (
+            git_msg,
+            clean_msg,
+            f"成功安裝與更新 {success_count} / {total} 項套件與擴充模組！",
+            trans_msg,
+        ) if p
+    ]
     summary = "\n".join(summary_parts).strip()
     return True, summary, success_count, total
 

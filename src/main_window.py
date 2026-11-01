@@ -110,10 +110,10 @@ class MainWindow(QWidget):
     EXPANDED_HEIGHT = 780
     WINDOW_WIDTH = 1060
 
-    def __init__(self, version: str = "1.0.1"):
+    def __init__(self, version: str = "1.0.2"):
         super().__init__()
         self.version = version
-        # 預設展開完整模組清單，讓使用者開啟即一覽全部 30 項繁中模組與說明
+        # 預設展開完整模組清單，讓使用者開啟即一覽全部 27 項零衝突繁中模組與說明
         self.is_list_expanded = True
         self.worker: Optional[InstallWorker] = None
         self.git_worker: Optional[GitCheckWorker] = None
@@ -344,10 +344,10 @@ class MainWindow(QWidget):
 
         self.cat_filter_buttons: Dict[str, PushButton] = {}
         cat_defs = [
-            ("ALL", "全部模組 (30)"),
+            ("ALL", "全部模組 (27)"),
             ("核心框架", "🛡️ 核心框架 (2)"),
-            ("Lua 模組", "📜 Lua 模組 (14)"),
-            ("Pak 模組", "📦 Pak 模組 (12)"),
+            ("Lua 模組", "📜 Lua 模組 (12)"),
+            ("Pak 模組", "📦 Pak 模組 (11)"),
             ("RuneSchema 模組", "🧬 數據模組 (2)"),
         ]
         for cat_key, cat_label in cat_defs:
@@ -399,7 +399,7 @@ class MainWindow(QWidget):
         self.lbl_detail_title.setFont(get_app_font(9, True))
 
         self.lbl_detail_desc = CaptionLabel(
-            "包含 2 項固定版核心框架 (UE4SS + RuneSchema) 與 28 項實用擴充模組，標註「🌐」者支援遊戲內介面與 Mod Menu 設定選單繁體中文化。",
+            "包含 2 項固定版核心框架 (UE4SS + RuneSchema) 與 25 項零衝突・零輪詢擴充模組，標註「🌐」者支援遊戲內介面與 Mod Menu 設定選單繁體中文化。",
             self.detail_frame
         )
         self.lbl_detail_desc.setFont(get_app_font(9, False))
@@ -534,8 +534,8 @@ class MainWindow(QWidget):
 
     def on_toggle_mod_list(self):
         self.is_list_expanded = not self.is_list_expanded
-        total_cnt = self.current_status.get("total_all", 30)
-        addons_cnt = self.current_status.get("total_addons", 28)
+        total_cnt = self.current_status.get("total_all", 27)
+        addons_cnt = self.current_status.get("total_addons", 25)
 
         if self.is_list_expanded:
             self.list_card.show()
