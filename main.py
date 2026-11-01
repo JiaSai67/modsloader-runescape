@@ -27,7 +27,7 @@ elif hasattr(sys.stderr, "reconfigure"):
     except Exception:
         pass
 
-ROOT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = Path(os.path.abspath(__file__)).parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 

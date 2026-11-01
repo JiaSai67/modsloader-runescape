@@ -5,8 +5,8 @@ MLRS (ModsLoader - RuneScapes) - 現代化極簡 Fluent GUI
 - 支援系統深淺色主題自動適配 (setTheme(Theme.AUTO)) 與手動快速切換
 - 開啟程式後自動於背景檢查 GitHub 遠端版本狀況與模組版本更新差異
 - 頂部品牌卡片 (含版本徽章與 Git 雲端同步狀態徽章) + 4 格狀態確認矩陣
-- 一鍵從 Git 同步並安裝/更新按鈕 + 即時進度條
-- 可展開 / 收合的詳細模組清單 (TreeWidget 分類全展開 + 動態條紋色彩 + 模組版本對比)
+- 一鍵從 Git 同步、安裝/更新並自動套用遊戲內模組文本繁體中文化
+- 預設完整展開全 30 項模組繁體中文清單 (支援關鍵字搜尋、分類篩選、完整效果說明與選取詳情面板)
 """
 
 import os
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Dict
 
-from PySide6.QtCore import Qt, QThread, Signal, QSize
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QIcon, QPixmap, QColor, QBrush
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
@@ -24,7 +24,8 @@ from qfluentwidgets import (
     setTheme, Theme, isDarkTheme, setThemeColor,
     CardWidget, StrongBodyLabel, BodyLabel, CaptionLabel, SubtitleLabel,
     PrimaryPushButton, PushButton, TransparentPushButton, ToolButton,
-    ProgressBar, TreeWidget, InfoBar, InfoBarPosition, FluentIcon, MessageBox
+    ProgressBar, TreeWidget, LineEdit, CheckBox,
+    InfoBar, InfoBarPosition, FluentIcon, MessageBox
 )
 
 from src.theme_utils import get_state_color, get_app_font, get_rounded_pixmap
@@ -51,15 +52,22 @@ class GitCheckWorker(QThread):
 
 
 class InstallWorker(QThread):
-    """背景執行 Git 同步與 30 項套件/模組解壓安裝的 Worker 執行緒"""
+    """背景執行 Git 同步、30 項套件/模組解壓安裝與遊戲內模組文本漢化的 Worker 執行緒"""
     progress_signal = Signal(int, str)
     finished_signal = Signal(bool, str, int, int)
 
-    def __init__(self, game_path: str, selected_filenames: Optional[List[str]] = None, sync_git: bool = True):
+    def __init__(
+        self,
+        game_path: str,
+        selected_filenames: Optional[List[str]] = None,
+        sync_git: bool = True,
+        translate_texts: bool = True,
+    ):
         super().__init__()
         self.game_path = game_path
         self.selected_filenames = selected_filenames
         self.sync_git = sync_git
+        self.translate_texts = translate_texts
 
     def run(self):
         try:
@@ -67,6 +75,7 @@ class InstallWorker(QThread):
                 game_path=self.game_path,
                 selected_filenames=self.selected_filenames,
                 sync_git=self.sync_git,
+                translate_texts=self.translate_texts,
                 progress_callback=lambda pct, text: self.progress_signal.emit(pct, text),
             )
             self.finished_signal.emit(ok, msg, cnt, tot)
@@ -100,26 +109,31 @@ class StatusMetricCard(CardWidget):
 
 
 class MainWindow(QWidget):
-    COLLAPSED_HEIGHT = 355
-    EXPANDED_HEIGHT = 720
-    WINDOW_WIDTH = 860
+    COLLAPSED_HEIGHT = 360
+    EXPANDED_HEIGHT = 780
+    WINDOW_WIDTH = 1060
 
     def __init__(self, version: str = "1.0.0"):
         super().__init__()
         self.version = version
-        self.is_list_expanded = False
+        # 預設展開完整模組清單，讓使用者開啟即一覽全部 30 項繁中模組與說明
+        self.is_list_expanded = True
         self.worker: Optional[InstallWorker] = None
         self.git_worker: Optional[GitCheckWorker] = None
         self.current_status: Dict = {}
+        self.unchecked_filenames: set = set()
+        self.active_category_filter: str = "ALL"
+        self.search_keyword: str = ""
+        self._is_populating_tree: bool = False
 
         # 預設跟隨系統深淺色主題，並設定高質感主題色
         setTheme(Theme.AUTO)
         setThemeColor("#0078D4")
 
         self.setWindowTitle(f"MLRS (ModsLoader - RuneScapes) v{self.version}")
-        self.resize(self.WINDOW_WIDTH, self.COLLAPSED_HEIGHT)
-        self.setMinimumWidth(780)
-        self.setMinimumHeight(self.COLLAPSED_HEIGHT)
+        self.resize(self.WINDOW_WIDTH, self.EXPANDED_HEIGHT)
+        self.setMinimumWidth(880)
+        self.setMinimumHeight(580)
 
         # 載入視窗圖示
         self.icon_path = mod_manager.ROOT_DIR / "assets" / "icon.png"
@@ -137,23 +151,23 @@ class MainWindow(QWidget):
 
     def _init_ui(self):
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(18, 16, 18, 16)
-        self.root_layout.setSpacing(12)
+        self.root_layout.setContentsMargins(18, 14, 18, 14)
+        self.root_layout.setSpacing(10)
 
         # =====================================================================
         # 1. 頂部品牌與遊戲路徑橫幅卡片 (Hero Header Card)
         # =====================================================================
         self.header_card = CardWidget(self)
         header_layout = QHBoxLayout(self.header_card)
-        header_layout.setContentsMargins(16, 14, 16, 14)
+        header_layout.setContentsMargins(16, 12, 16, 12)
         header_layout.setSpacing(14)
 
         # 圓角 Dragonwilds 圖示
         self.lbl_logo = QLabel(self.header_card)
-        self.lbl_logo.setFixedSize(56, 56)
+        self.lbl_logo.setFixedSize(54, 54)
         if self.icon_path.exists():
             pix = QPixmap(str(self.icon_path))
-            self.lbl_logo.setPixmap(get_rounded_pixmap(pix, 56, 0.22))
+            self.lbl_logo.setPixmap(get_rounded_pixmap(pix, 54, 0.22))
         header_layout.addWidget(self.lbl_logo)
 
         # 標題、版本徽章、Git 雲端狀態徽章與路徑資訊
@@ -231,14 +245,14 @@ class MainWindow(QWidget):
         # =====================================================================
         self.action_card = CardWidget(self)
         action_layout = QVBoxLayout(self.action_card)
-        action_layout.setContentsMargins(16, 14, 16, 14)
-        action_layout.setSpacing(10)
+        action_layout.setContentsMargins(16, 12, 16, 12)
+        action_layout.setSpacing(8)
 
         top_action_row = QHBoxLayout()
-        top_action_row.setSpacing(12)
+        top_action_row.setSpacing(10)
 
         status_text_col = QVBoxLayout()
-        status_text_col.setSpacing(4)
+        status_text_col.setSpacing(3)
         self.lbl_action_title = StrongBodyLabel("🔍 正在檢查 Git 雲端版本與模組更新狀態...", self.action_card)
         self.lbl_action_title.setFont(get_app_font(11, True))
         self.lbl_action_sub = CaptionLabel(
@@ -252,23 +266,30 @@ class MainWindow(QWidget):
 
         # 重新檢測按鈕 (同時重新掃描本地目錄與檢查 Git 遠端版本狀態)
         self.btn_refresh = PushButton(FluentIcon.SYNC, "檢查更新", self.action_card)
-        self.btn_refresh.setFixedHeight(38)
+        self.btn_refresh.setFixedHeight(36)
         self.btn_refresh.setToolTip("重新掃描遊戲目錄並檢查 GitHub 雲端模組是否有新版本")
         self.btn_refresh.clicked.connect(lambda: self.refresh_status(check_git=True))
 
+        # 獨立套用遊戲內文本漢化按鈕
+        self.btn_apply_trans = PushButton(FluentIcon.LANGUAGE, "套用文本漢化", self.action_card)
+        self.btn_apply_trans.setFixedHeight(36)
+        self.btn_apply_trans.setToolTip("立即將遊戲內已安裝模組的 Mod Menu 設定選單與介面文字轉換為繁體中文")
+        self.btn_apply_trans.clicked.connect(self.on_apply_translations_only)
+
         # 清除模組按鈕
         self.btn_uninstall = PushButton(FluentIcon.DELETE, "清除模組", self.action_card)
-        self.btn_uninstall.setFixedHeight(38)
+        self.btn_uninstall.setFixedHeight(36)
         self.btn_uninstall.setToolTip("一鍵移除遊戲目錄內的 UE4SS、RuneSchema 與所有模組，恢復純淨原版")
         self.btn_uninstall.clicked.connect(self.on_uninstall_all)
 
         # 一鍵同步並安裝主按鈕
         self.btn_install = PrimaryPushButton(FluentIcon.DOWNLOAD, "一鍵同步並安裝模組", self.action_card)
-        self.btn_install.setFixedSize(210, 38)
+        self.btn_install.setFixedSize(205, 36)
         self.btn_install.setFont(get_app_font(10, True))
         self.btn_install.clicked.connect(self.on_start_install)
 
         top_action_row.addWidget(self.btn_refresh)
+        top_action_row.addWidget(self.btn_apply_trans)
         top_action_row.addWidget(self.btn_uninstall)
         top_action_row.addWidget(self.btn_install)
         action_layout.addLayout(top_action_row)
@@ -284,14 +305,15 @@ class MainWindow(QWidget):
         self.root_layout.addWidget(self.action_card)
 
         # =====================================================================
-        # 4. 展開 / 關閉的詳細模組清單 (Collapsible Detailed Mod List)
+        # 4. 展開 / 收合與完整 30 項模組繁體中文清單 (Complete Mod Catalog)
         # =====================================================================
         toggle_row = QHBoxLayout()
         toggle_row.setContentsMargins(2, 0, 2, 0)
+        toggle_row.setSpacing(8)
 
         self.btn_toggle_list = TransparentPushButton(
-            FluentIcon.DOWN,
-            "展開詳細模組清單 (載入中...)",
+            FluentIcon.UP,
+            "收合完整模組清單 (載入中...)",
             self
         )
         self.btn_toggle_list.setFont(get_app_font(10, True))
@@ -299,44 +321,112 @@ class MainWindow(QWidget):
         toggle_row.addWidget(self.btn_toggle_list)
         toggle_row.addStretch(1)
 
+        # 遊戲內文本中文化自動套用勾選開關
+        self.chk_auto_translate = CheckBox("安裝時自動套用遊戲內模組文本繁體中文化", self)
+        self.chk_auto_translate.setChecked(True)
+        self.chk_auto_translate.setFont(get_app_font(9, False))
+        self.chk_auto_translate.setToolTip(
+            "勾選後，安裝或更新模組時會自動將 Mod Menu、Station Feeder、Stashlink、QuickStack、RSDSFreedom 等遊戲內介面與設定選單轉為繁體中文"
+        )
+        toggle_row.addWidget(self.chk_auto_translate)
+
         self.btn_select_all = TransparentPushButton("全選擴充模組", self)
         self.btn_select_all.setFont(get_app_font(9, False))
         self.btn_select_all.clicked.connect(lambda: self._set_all_addons_checked(True))
-        self.btn_select_all.hide()
 
         self.btn_deselect_all = TransparentPushButton("取消全選", self)
         self.btn_deselect_all.setFont(get_app_font(9, False))
         self.btn_deselect_all.clicked.connect(lambda: self._set_all_addons_checked(False))
-        self.btn_deselect_all.hide()
 
         toggle_row.addWidget(self.btn_select_all)
         toggle_row.addWidget(self.btn_deselect_all)
 
         self.root_layout.addLayout(toggle_row)
 
-        # 詳細模組清單容器卡片 (預設收合隱藏)
+        # 完整模組清單容器卡片 (預設展開顯示全部 30 項模組)
         self.list_card = CardWidget(self)
         list_layout = QVBoxLayout(self.list_card)
-        list_layout.setContentsMargins(10, 10, 10, 10)
-        list_layout.setSpacing(6)
+        list_layout.setContentsMargins(12, 10, 12, 10)
+        list_layout.setSpacing(8)
 
+        # 4.1 搜尋與分類快速篩選工具列
+        filter_row = QHBoxLayout()
+        filter_row.setSpacing(6)
+
+        self.search_input = LineEdit(self.list_card)
+        self.search_input.setPlaceholderText("🔍 搜尋模組名稱 (中文/英文)、功能效果說明或分類...")
+        self.search_input.setClearButtonEnabled(True)
+        self.search_input.setFixedHeight(32)
+        self.search_input.textChanged.connect(self.on_search_text_changed)
+        filter_row.addWidget(self.search_input, 1)
+
+        self.cat_filter_buttons: Dict[str, PushButton] = {}
+        cat_defs = [
+            ("ALL", "全部模組 (30)"),
+            ("核心框架", "🛡️ 核心框架 (2)"),
+            ("Lua 模組", "📜 Lua 模組 (14)"),
+            ("Pak 模組", "📦 Pak 模組 (12)"),
+            ("RuneSchema 模組", "🧬 數據模組 (2)"),
+        ]
+        for cat_key, cat_label in cat_defs:
+            btn = PushButton(cat_label, self.list_card)
+            btn.setFixedHeight(30)
+            btn.setFont(get_app_font(9, cat_key == "ALL"))
+            btn.clicked.connect(lambda checked=False, k=cat_key: self.on_category_filter_clicked(k))
+            self.cat_filter_buttons[cat_key] = btn
+            filter_row.addWidget(btn)
+
+        list_layout.addLayout(filter_row)
+
+        # 4.2 完整模組樹狀表格 (含繁中名稱、完整功能說明、版本、類型、安裝狀態)
         self.tree_mods = TreeWidget(self.list_card)
         self.tree_mods.setColumnCount(5)
-        self.tree_mods.setHeaderLabels(["模組名稱 (可勾選安裝)", "最新版本", "類型", "當前版本狀態", "目標相對路徑"])
+        self.tree_mods.setHeaderLabels([
+            "模組名稱 (繁體中文 / 原名)",
+            "功能與效果說明 (繁體中文)",
+            "最新版本",
+            "類型",
+            "安裝與版本狀態",
+        ])
         self.tree_mods.setFont(get_app_font(9, False))
         self.tree_mods.setIndentation(18)
         self.tree_mods.setRootIsDecorated(True)
+        self.tree_mods.itemChanged.connect(self.on_tree_item_changed)
+        self.tree_mods.itemSelectionChanged.connect(self.on_tree_selection_changed)
 
         header = self.tree_mods.header()
         header.setSectionResizeMode(0, QHeaderView.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)          # 功能與效果說明自動填滿剩餘寬度
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.Stretch)  # 最後一欄 Stretch 填滿畫面
-        self.tree_mods.setColumnWidth(0, 280)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.tree_mods.setColumnWidth(0, 325)
 
         list_layout.addWidget(self.tree_mods, 1)
-        self.list_card.hide()
+
+        # 4.3 底部模組詳情與翻譯狀態預覽列 (點擊任一模組顯示完整資訊)
+        self.detail_frame = QFrame(self.list_card)
+        detail_layout = QVBoxLayout(self.detail_frame)
+        detail_layout.setContentsMargins(12, 8, 12, 8)
+        detail_layout.setSpacing(2)
+
+        self.lbl_detail_title = StrongBodyLabel(
+            "💡 點擊上方清單中的任一模組，可在此查看完整繁體中文功能介紹、目標路徑與遊戲內文本漢化狀態",
+            self.detail_frame
+        )
+        self.lbl_detail_title.setFont(get_app_font(9, True))
+
+        self.lbl_detail_desc = CaptionLabel(
+            "包含 2 項固定版核心框架 (UE4SS + RuneSchema) 與 28 項實用擴充模組，標註「🌐」者支援遊戲內介面與 Mod Menu 設定選單繁體中文化。",
+            self.detail_frame
+        )
+        self.lbl_detail_desc.setFont(get_app_font(9, False))
+        self.lbl_detail_desc.setWordWrap(True)
+
+        detail_layout.addWidget(self.lbl_detail_title)
+        detail_layout.addWidget(self.lbl_detail_desc)
+        list_layout.addWidget(self.detail_frame)
+
         self.root_layout.addWidget(self.list_card, 1)
 
     # =========================================================================
@@ -348,17 +438,43 @@ class MainWindow(QWidget):
         text_color = get_state_color("text")
         muted_color = get_state_color("muted")
         accent_color = get_state_color("accent")
+        sub_bg = get_state_color("card_sub_bg")
+        border_color = get_state_color("border")
 
         self.setStyleSheet(f"MainWindow {{ background-color: {bg_root}; }}")
         self.lbl_app_title.setStyleSheet(f"color: {text_color}; font-weight: 700;")
         self.lbl_ver_badge.setStyleSheet(
-            f"color: {accent_color}; background: {get_state_color('card_sub_bg')}; "
-            f"border: 1px solid {get_state_color('border')}; border-radius: 6px; padding: 2px 8px;"
+            f"color: {accent_color}; background: {sub_bg}; "
+            f"border: 1px solid {border_color}; border-radius: 6px; padding: 2px 8px;"
         )
         self._style_git_badge(mod_manager.get_last_git_status().get("badge_state", "muted"))
         self.lbl_game_path.setStyleSheet(f"color: {muted_color};")
         self.lbl_action_title.setStyleSheet(f"color: {text_color}; font-weight: 700;")
         self.lbl_action_sub.setStyleSheet(f"color: {muted_color};")
+
+        self.detail_frame.setStyleSheet(
+            f"QFrame {{ background-color: {sub_bg}; border: 1px solid {border_color}; border-radius: 6px; }}"
+        )
+        self.lbl_detail_title.setStyleSheet(f"color: {text_color}; border: none; background: transparent;")
+        self.lbl_detail_desc.setStyleSheet(f"color: {muted_color}; border: none; background: transparent;")
+        self._update_category_button_styles()
+
+    def _update_category_button_styles(self):
+        accent = get_state_color("accent")
+        text_color = get_state_color("text")
+        sub_bg = get_state_color("card_sub_bg")
+        border_color = get_state_color("border")
+        for key, btn in self.cat_filter_buttons.items():
+            if key == self.active_category_filter:
+                btn.setStyleSheet(
+                    f"PushButton {{ color: {accent}; background: {sub_bg}; "
+                    f"border: 1px solid {accent}; border-radius: 5px; font-weight: 700; padding: 2px 10px; }}"
+                )
+            else:
+                btn.setStyleSheet(
+                    f"PushButton {{ color: {text_color}; background: transparent; "
+                    f"border: 1px solid {border_color}; border-radius: 5px; padding: 2px 10px; }}"
+                )
 
     def _style_git_badge(self, state_key: str = "muted"):
         fg = get_state_color(state_key)
@@ -431,7 +547,7 @@ class MainWindow(QWidget):
                 )
 
     # =========================================================================
-    # 展開 / 收合詳細模組清單
+    # 展開 / 收合詳細模組清單與篩選器
     # =========================================================================
 
     def on_toggle_mod_list(self):
@@ -443,28 +559,75 @@ class MainWindow(QWidget):
             self.list_card.show()
             self.btn_select_all.show()
             self.btn_deselect_all.show()
+            self.chk_auto_translate.show()
             self.btn_toggle_list.setIcon(FluentIcon.UP)
-            self.btn_toggle_list.setText(f"收合詳細模組清單 (共 {total_cnt} 項：2 核心框架 + {addons_cnt} 擴充模組)")
-            self.setMinimumHeight(560)
+            self.btn_toggle_list.setText(f"收合完整模組清單 (共 {total_cnt} 項：2 核心框架 + {addons_cnt} 擴充模組)")
+            self.setMinimumHeight(580)
             self.resize(self.width(), self.EXPANDED_HEIGHT)
             self.tree_mods.expandAll()
         else:
             self.list_card.hide()
             self.btn_select_all.hide()
             self.btn_deselect_all.hide()
+            self.chk_auto_translate.hide()
             self.btn_toggle_list.setIcon(FluentIcon.DOWN)
-            self.btn_toggle_list.setText(f"展開詳細模組清單 (共 {total_cnt} 項：2 核心框架 + {addons_cnt} 擴充模組)")
+            self.btn_toggle_list.setText(f"展開完整模組清單 (共 {total_cnt} 項：2 核心框架 + {addons_cnt} 擴充模組)")
             self.setMinimumHeight(self.COLLAPSED_HEIGHT)
             self.resize(self.width(), self.COLLAPSED_HEIGHT)
+
+    def on_search_text_changed(self, text: str):
+        self.search_keyword = text.strip().lower()
+        self._populate_tree(self.current_status.get("items", []))
+
+    def on_category_filter_clicked(self, cat_key: str):
+        self.active_category_filter = cat_key
+        self._update_category_button_styles()
+        self._populate_tree(self.current_status.get("items", []))
+
+    def on_tree_item_changed(self, item: QTreeWidgetItem, column: int):
+        if self._is_populating_tree or column != 0:
+            return
+        fname = item.data(0, Qt.UserRole)
+        is_core = item.data(0, Qt.UserRole + 1)
+        if not fname or is_core:
+            return
+        if item.checkState(0) == Qt.Unchecked:
+            self.unchecked_filenames.add(fname)
+        else:
+            self.unchecked_filenames.discard(fname)
+
+    def on_tree_selection_changed(self):
+        selected_items = self.tree_mods.selectedItems()
+        if not selected_items:
+            return
+        item = selected_items[0]
+        fname = item.data(0, Qt.UserRole)
+        if not fname:
+            return
+        mod_info = next((m for m in self.current_status.get("items", []) if m["filename"] == fname), None)
+        if not mod_info:
+            return
+
+        zh_name = mod_info.get("zh_name") or mod_info["name"]
+        en_name = mod_info.get("en_name") or mod_info["name"]
+        ver = mod_info.get("latest_version") or mod_info["version"]
+        cat = mod_info.get("category", "")
+        has_trans = mod_info.get("has_in_game_text", False)
+        trans_badge = " · 🌐 支援遊戲內介面與設定選單繁體中文化" if has_trans else " · ⚡ 自動生效型模組 (無須額外遊戲內設定)"
+        mod_id_str = f" · Nexus ID #{mod_info['mod_id']}" if mod_info.get("mod_id") else ""
+
+        self.lbl_detail_title.setText(
+            f"📌 {zh_name}  ({en_name} v{ver})  [{cat}{mod_id_str}{trans_badge}]"
+        )
+        self.lbl_detail_desc.setText(
+            f"📝 功能說明：{mod_info.get('zh_desc', '')}   ｜   📂 目標路徑：{mod_info.get('target_rel', '')}"
+        )
 
     # =========================================================================
     # 狀態檢測與清單渲染
     # =========================================================================
 
     def refresh_status(self, check_git: bool = False):
-        # 記住目前已取消勾選的項目
-        unchecked_files = self._get_unchecked_filenames()
-
         st = mod_manager.get_overall_status(self.game_path)
         self.current_status = st
 
@@ -512,136 +675,180 @@ class MainWindow(QWidget):
         else:
             self.card_stat_mods.set_status(f"🔴 尚未安裝 (0 / {tot_add})", "error")
 
+        # 更新分類按鈕上的數量統計
+        all_items = st["items"]
+        cat_counts = {
+            "ALL": len(all_items),
+            "核心框架": sum(1 for m in all_items if m["category"] == "核心框架"),
+            "Lua 模組": sum(1 for m in all_items if m["category"] == "Lua 模組"),
+            "Pak 模組": sum(1 for m in all_items if m["category"] == "Pak 模組"),
+            "RuneSchema 模組": sum(1 for m in all_items if m["category"] == "RuneSchema 模組"),
+        }
+        cat_titles = {
+            "ALL": f"全部模組 ({cat_counts['ALL']})",
+            "核心框架": f"🛡️ 核心框架 ({cat_counts['核心框架']})",
+            "Lua 模組": f"📜 Lua 模組 ({cat_counts['Lua 模組']})",
+            "Pak 模組": f"📦 Pak 模組 ({cat_counts['Pak 模組']})",
+            "RuneSchema 模組": f"🧬 數據模組 ({cat_counts['RuneSchema 模組']})",
+        }
+        for k, btn in self.cat_filter_buttons.items():
+            if k in cat_titles:
+                btn.setText(cat_titles[k])
+
         # 更新展開/收合按鈕文字
         total_cnt = st["total_all"]
-        prefix = "收合詳細模組清單" if self.is_list_expanded else "展開詳細模組清單"
+        prefix = "收合完整模組清單" if self.is_list_expanded else "展開完整模組清單"
         self.btn_toggle_list.setText(f"{prefix} (共 {total_cnt} 項：2 核心框架 + {tot_add} 擴充模組)")
 
-        # 5. 重新渲染詳細模組樹狀清單
-        self._populate_tree(st["items"], unchecked_files)
+        # 5. 重新渲染完整模組樹狀清單
+        self._populate_tree(all_items)
 
         if check_git:
             self.start_git_version_check(is_startup=False)
 
-    def _populate_tree(self, items: List[dict], unchecked_files: set):
-        self.tree_mods.clear()
+    def _matches_filter(self, m: dict) -> bool:
+        if self.active_category_filter != "ALL" and m.get("category") != self.active_category_filter:
+            return False
+        if not self.search_keyword:
+            return True
+        haystack = " ".join([
+            str(m.get("zh_name", "")),
+            str(m.get("en_name", "")),
+            str(m.get("name", "")),
+            str(m.get("zh_desc", "")),
+            str(m.get("category", "")),
+            str(m.get("mod_id", "")),
+            str(m.get("target_rel", "")),
+        ]).lower()
+        return self.search_keyword in haystack
 
-        categories = [
-            ("核心框架", "🛡️ 核心前置框架 (固定必裝版本)"),
-            ("Lua 模組", "📜 UE4SS Lua 腳本模組"),
-            ("Pak 模組", "📦 Pak 資源模組"),
-            ("RuneSchema 模組", "🧬 RuneSchema 數據模組"),
-        ]
+    def _populate_tree(self, items: List[dict]):
+        self._is_populating_tree = True
+        try:
+            self.tree_mods.clear()
 
-        stripe_1 = QBrush(QColor(get_state_color("bg_stripe_1")))
-        stripe_2 = QBrush(QColor(get_state_color("bg_stripe_2")))
-        text_brush = QBrush(QColor(get_state_color("text")))
-        muted_brush = QBrush(QColor(get_state_color("muted")))
-        succ_brush = QBrush(QColor(get_state_color("success")))
-        warn_brush = QBrush(QColor(get_state_color("warning")))
-        err_brush = QBrush(QColor(get_state_color("error")))
-        accent_brush = QBrush(QColor(get_state_color("accent")))
+            categories = [
+                ("核心框架", "🛡️ 核心前置框架 (固定必裝版本)"),
+                ("Lua 模組", "📜 UE4SS Lua 腳本與介面模組"),
+                ("Pak 模組", "📦 Unreal Pak 資源修改模組"),
+                ("RuneSchema 模組", "🧬 RuneSchema 數據擴充模組"),
+            ]
 
-        state_brush_map = {
-            "success": succ_brush,
-            "warning": warn_brush,
-            "error": err_brush,
-            "muted": muted_brush,
-            "accent": accent_brush,
-        }
+            stripe_1 = QBrush(QColor(get_state_color("bg_stripe_1")))
+            stripe_2 = QBrush(QColor(get_state_color("bg_stripe_2")))
+            text_brush = QBrush(QColor(get_state_color("text")))
+            muted_brush = QBrush(QColor(get_state_color("muted")))
+            succ_brush = QBrush(QColor(get_state_color("success")))
+            warn_brush = QBrush(QColor(get_state_color("warning")))
+            err_brush = QBrush(QColor(get_state_color("error")))
+            accent_brush = QBrush(QColor(get_state_color("accent")))
 
-        for cat_key, cat_title in categories:
-            cat_items = [m for m in items if m["category"] == cat_key]
-            if not cat_items:
-                continue
+            state_brush_map = {
+                "success": succ_brush,
+                "warning": warn_brush,
+                "error": err_brush,
+                "muted": muted_brush,
+                "accent": accent_brush,
+            }
 
-            inst_in_cat = sum(1 for m in cat_items if m["installed"])
-            upd_in_cat = sum(1 for m in cat_items if m.get("has_update", False))
-            upd_suffix = f" · 🟡 {upd_in_cat} 項可更新" if upd_in_cat > 0 else ""
+            for cat_key, cat_title in categories:
+                cat_items = [m for m in items if m["category"] == cat_key and self._matches_filter(m)]
+                if not cat_items:
+                    continue
 
-            cat_node = QTreeWidgetItem(self.tree_mods)
-            cat_node.setText(0, f"{cat_title} ({inst_in_cat}/{len(cat_items)}{upd_suffix})")
-            cat_node.setFont(0, get_app_font(9, True))
-            cat_node.setForeground(0, accent_brush)
-            cat_node.setFirstColumnSpanned(False)
+                inst_in_cat = sum(1 for m in cat_items if m["installed"])
+                upd_in_cat = sum(1 for m in cat_items if m.get("has_update", False))
+                trans_in_cat = sum(1 for m in cat_items if m.get("has_in_game_text", False))
+                upd_suffix = f" · 🟡 {upd_in_cat} 項可更新" if upd_in_cat > 0 else ""
+                trans_suffix = f" · 🌐 {trans_in_cat} 項含遊戲內漢化" if trans_in_cat > 0 else ""
 
-            for idx, m in enumerate(cat_items):
-                row_node = QTreeWidgetItem(cat_node)
-                row_node.setData(0, Qt.UserRole, m["filename"])
-                row_node.setData(0, Qt.UserRole + 1, m["is_core"])
+                cat_node = QTreeWidgetItem(self.tree_mods)
+                cat_node.setText(0, f"{cat_title} ({inst_in_cat}/{len(cat_items)}{upd_suffix})")
+                cat_node.setText(1, f"此分類共 {len(cat_items)} 項模組{trans_suffix}")
+                cat_node.setFont(0, get_app_font(9, True))
+                cat_node.setFont(1, get_app_font(9, False))
+                cat_node.setForeground(0, accent_brush)
+                cat_node.setForeground(1, muted_brush)
+                cat_node.setFirstColumnSpanned(False)
 
-                latest_v = m.get("latest_version") or m["version"]
-                status_text = m.get("status_text") or ("🟢 已安裝" if m["installed"] else "⚪ 未安裝")
-                status_state = m.get("status_state", "success" if m["installed"] else "error")
+                for idx, m in enumerate(cat_items):
+                    row_node = QTreeWidgetItem(cat_node)
+                    row_node.setData(0, Qt.UserRole, m["filename"])
+                    row_node.setData(0, Qt.UserRole + 1, m["is_core"])
 
-                row_node.setText(0, m["name"])
-                row_node.setText(1, f"v{latest_v}")
-                row_node.setText(2, m["category"])
-                row_node.setText(3, status_text)
-                row_node.setText(4, m["target_rel"])
+                    latest_v = m.get("latest_version") or m["version"]
+                    status_text = m.get("status_text") or ("🟢 已安裝" if m["installed"] else "⚪ 未安裝")
+                    status_state = m.get("status_state", "success" if m["installed"] else "error")
 
-                # 勾選框設定：核心框架固定鎖定勾選，擴充模組可自由勾選
-                if m["is_core"]:
-                    row_node.setCheckState(0, Qt.Checked)
-                    row_node.setFlags(row_node.flags() & ~Qt.ItemIsUserCheckable)
-                else:
-                    is_checked = m["filename"] not in unchecked_files
-                    row_node.setCheckState(0, Qt.Checked if is_checked else Qt.Unchecked)
+                    zh_name = m.get("zh_name") or m["name"]
+                    en_name = m.get("en_name") or m["name"]
+                    zh_desc = m.get("zh_desc") or ""
+                    has_trans = m.get("has_in_game_text", False)
+                    lang_tag = " 🌐" if has_trans else ""
 
-                bg_brush = stripe_1 if idx % 2 == 0 else stripe_2
-                for col in range(5):
-                    row_node.setBackground(col, bg_brush)
+                    title_cell = f"{zh_name}{lang_tag}  [{en_name}]"
+                    row_node.setText(0, title_cell)
+                    row_node.setText(1, zh_desc)
+                    row_node.setText(2, f"v{latest_v}")
+                    row_node.setText(3, m["category"])
+                    row_node.setText(4, status_text)
 
-                row_node.setForeground(0, text_brush)
-                row_node.setForeground(1, warn_brush if m.get("has_update") else muted_brush)
-                row_node.setForeground(2, muted_brush)
-                row_node.setForeground(3, state_brush_map.get(status_state, muted_brush))
-                row_node.setForeground(4, muted_brush)
+                    # 豐富懸停提示 (Tooltip)
+                    tooltip_lines = [
+                        f"【{zh_name}】 ({en_name})",
+                        f"• 版本：v{latest_v}   |   分類：{m['category']}" + (f"   |   Nexus ID: #{m['mod_id']}" if m.get("mod_id") else ""),
+                        f"• 狀態：{status_text}",
+                        f"• 功能說明：{zh_desc}",
+                        f"• 遊戲內文本漢化：{'🌐 支援 (自動漢化 Mod Menu 設定選單與遊戲內提示介面)' if has_trans else '⚡ 無獨立文字介面 (安裝後直接生效)'}",
+                        f"• 目標路徑：{m['target_rel']}",
+                        f"• 壓縮檔名：{m['filename']}",
+                    ]
+                    full_tooltip = "\n".join(tooltip_lines)
+                    for col in range(5):
+                        row_node.setToolTip(col, full_tooltip)
 
-        # 預設全展開所有分類節點
-        self.tree_mods.expandAll()
+                    # 勾選框設定：核心框架固定鎖定勾選，擴充模組可自由勾選
+                    if m["is_core"]:
+                        row_node.setCheckState(0, Qt.Checked)
+                        row_node.setFlags(row_node.flags() & ~Qt.ItemIsUserCheckable)
+                    else:
+                        is_checked = m["filename"] not in self.unchecked_filenames
+                        row_node.setCheckState(0, Qt.Checked if is_checked else Qt.Unchecked)
 
-    def _get_unchecked_filenames(self) -> set:
-        unchecked = set()
-        root = self.tree_mods.invisibleRootItem()
-        for i in range(root.childCount()):
-            cat_node = root.child(i)
-            for j in range(cat_node.childCount()):
-                row_node = cat_node.child(j)
-                fname = row_node.data(0, Qt.UserRole)
-                is_core = row_node.data(0, Qt.UserRole + 1)
-                if fname and not is_core and row_node.checkState(0) == Qt.Unchecked:
-                    unchecked.add(fname)
-        return unchecked
+                    bg_brush = stripe_1 if idx % 2 == 0 else stripe_2
+                    for col in range(5):
+                        row_node.setBackground(col, bg_brush)
+
+                    row_node.setForeground(0, text_brush)
+                    row_node.setForeground(1, text_brush)
+                    row_node.setForeground(2, warn_brush if m.get("has_update") else muted_brush)
+                    row_node.setForeground(3, muted_brush)
+                    row_node.setForeground(4, state_brush_map.get(status_state, muted_brush))
+
+            # 預設全展開所有分類節點
+            self.tree_mods.expandAll()
+        finally:
+            self._is_populating_tree = False
 
     def _get_selected_filenames(self) -> List[str]:
+        all_items = self.current_status.get("items", [])
         selected = []
-        root = self.tree_mods.invisibleRootItem()
-        if root.childCount() == 0:
-            return [m["filename"] for m in self.current_status.get("items", [])]
-
-        for i in range(root.childCount()):
-            cat_node = root.child(i)
-            for j in range(cat_node.childCount()):
-                row_node = cat_node.child(j)
-                fname = row_node.data(0, Qt.UserRole)
-                is_core = row_node.data(0, Qt.UserRole + 1)
-                if fname and (is_core or row_node.checkState(0) == Qt.Checked):
-                    selected.append(fname)
+        for m in all_items:
+            if m["is_core"] or m["filename"] not in self.unchecked_filenames:
+                selected.append(m["filename"])
         return selected
 
     def _set_all_addons_checked(self, checked: bool):
-        state = Qt.Checked if checked else Qt.Unchecked
-        root = self.tree_mods.invisibleRootItem()
-        for i in range(root.childCount()):
-            cat_node = root.child(i)
-            for j in range(cat_node.childCount()):
-                row_node = cat_node.child(j)
-                if not row_node.data(0, Qt.UserRole + 1):
-                    row_node.setCheckState(0, state)
+        if checked:
+            self.unchecked_filenames.clear()
+        else:
+            for m in self.current_status.get("items", []):
+                if not m["is_core"]:
+                    self.unchecked_filenames.add(m["filename"])
+        self._populate_tree(self.current_status.get("items", []))
 
     # =========================================================================
-    # 互動事件處理 (變更路徑 / 一鍵同步安裝 / 清除模組)
+    # 互動事件處理 (變更路徑 / 一鍵同步安裝 / 獨立套用漢化 / 清除模組)
     # =========================================================================
 
     def on_browse_game_path(self):
@@ -692,6 +899,44 @@ class MainWindow(QWidget):
                 parent=self,
             )
 
+    def on_apply_translations_only(self):
+        if not mod_manager.is_valid_game_dir(self.game_path):
+            InfoBar.error(
+                title="尚未找到遊戲目錄",
+                content="請先確認 RSDragonwilds 安裝目錄後再套用文本漢化！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=3500,
+                parent=self,
+            )
+            return
+
+        loc_cnt, loc_mods = mod_manager.apply_mod_text_translations(self.game_path)
+        if loc_cnt > 0:
+            mods_str = "、".join(loc_mods)
+            self.lbl_action_title.setText(f"🌐 已套用遊戲內模組繁體中文化 ({len(loc_mods)} 項模組)")
+            self.lbl_action_sub.setText(f"已完成漢化模組：{mods_str}（共更新 {loc_cnt} 個設定與介面腳本檔）")
+            InfoBar.success(
+                title="遊戲內模組文本漢化完成",
+                content=f"已將 {len(loc_mods)} 項模組 ({mods_str}) 的 Mod Menu 選單與遊戲內介面轉為繁體中文！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=4500,
+                parent=self,
+            )
+        else:
+            InfoBar.warning(
+                title="無須更新或尚未安裝模組",
+                content="所有已安裝模組的遊戲內文本已經是繁體中文，或您尚未點擊「一鍵同步並安裝模組」。",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=4000,
+                parent=self,
+            )
+
     def on_start_install(self):
         if not mod_manager.is_valid_game_dir(self.game_path):
             InfoBar.error(
@@ -706,19 +951,23 @@ class MainWindow(QWidget):
             return
 
         selected_files = self._get_selected_filenames()
+        translate_texts = self.chk_auto_translate.isChecked()
+
         self.btn_install.setEnabled(False)
         self.btn_uninstall.setEnabled(False)
         self.btn_refresh.setEnabled(False)
+        self.btn_apply_trans.setEnabled(False)
         self.btn_browse.setEnabled(False)
 
         self.progress_bar.setValue(0)
         self.progress_bar.show()
-        self.lbl_action_title.setText("⏳ 正在從 Git 同步並部署最新模組版本...")
+        self.lbl_action_title.setText("⏳ 正在從 Git 同步、部署最新模組並套用繁體中文化...")
 
         self.worker = InstallWorker(
             game_path=self.game_path,
             selected_filenames=selected_files,
             sync_git=True,
+            translate_texts=translate_texts,
         )
         self.worker.progress_signal.connect(self._on_install_progress)
         self.worker.finished_signal.connect(self._on_install_finished)
@@ -732,6 +981,7 @@ class MainWindow(QWidget):
         self.btn_install.setEnabled(True)
         self.btn_uninstall.setEnabled(True)
         self.btn_refresh.setEnabled(True)
+        self.btn_apply_trans.setEnabled(True)
         self.btn_browse.setEnabled(True)
 
         self.refresh_status(check_git=False)
@@ -741,11 +991,12 @@ class MainWindow(QWidget):
         self.btn_install.setText("一鍵同步並安裝模組")
 
         if ok:
-            self.lbl_action_title.setText(f"✅ 模組同步與版本更新完成 ({cnt}/{tot})")
-            self.lbl_action_sub.setText("所有核心框架 (UE4SS + RuneSchema) 與擴充模組均已更新至最新版本，可直接啟動遊戲！")
+            trans_note = "（含遊戲內模組介面繁體中文化）" if self.chk_auto_translate.isChecked() else ""
+            self.lbl_action_title.setText(f"✅ 模組同步、安裝與更新完成 ({cnt}/{tot}) {trans_note}")
+            self.lbl_action_sub.setText("所有核心框架 (UE4SS + RuneSchema) 與擴充模組均已就緒，可直接啟動遊戲！")
             InfoBar.success(
-                title="安裝與更新成功",
-                content=f"已成功同步並更新 {cnt} / {tot} 項套件與模組！",
+                title="安裝與漢化成功",
+                content=f"已成功同步並更新 {cnt} / {tot} 項套件與模組{trans_note}！",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
@@ -810,6 +1061,12 @@ class MainWindow(QWidget):
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
-                duration=4000,
+                duration=5000,
                 parent=self,
             )
+
+    def closeEvent(self, event):
+        for w in (self.git_worker, self.worker):
+            if w is not None and w.isRunning():
+                w.wait(2000)
+        super().closeEvent(event)

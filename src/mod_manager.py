@@ -31,7 +31,7 @@ from datetime import datetime
 from typing import List, Dict, Tuple, Optional, Callable
 
 # 專案根目錄與設定檔
-ROOT_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(os.path.abspath(__file__)).parent.parent
 CONFIG_FILE = ROOT_DIR / "config.json"
 
 # GitHub 雲端模組儲存庫設定
@@ -64,6 +64,193 @@ UE4SS_BUILTINS = {
     "cheatmanagerenablermod", "consolecommandsmod", "consoleenablermod",
     "keybinds", "linetracemod", "splitscreenmod", "jsbluaprofilermod", "core"
 }
+
+# =========================================================================
+# 完整 30 項模組繁體中文圖鑑與功能說明資料庫 (MOD_CATALOG_METADATA)
+# =========================================================================
+MOD_CATALOG_METADATA: Dict[str, Dict[str, object]] = {
+    "core:ue4ss": {
+        "zh_name": "UE4SS 核心腳本與藍圖載入器",
+        "en_name": "UE4SS Steam (latest)",
+        "zh_desc": "所有 Lua 腳本與藍圖模組必備的核心底層載入器，提供遊戲執行期 Hook 與 UMG 介面繪製支援（固定相容版本）。",
+        "has_in_game_text": False,
+    },
+    "core:runeschema": {
+        "zh_name": "RuneSchema 數據與資產擴充框架",
+        "en_name": "RuneSchema (Steam)",
+        "zh_desc": "支援動態載入 JSON 格式的遊戲資料表（掉落表、Buff 時間、配方與藍圖參數），內建 Helpy 工具與存檔清理設定（固定相容版本）。",
+        "has_in_game_text": True,
+    },
+    "nexus:701": {
+        "zh_name": "增益狀態時間 10 倍延長",
+        "en_name": "BuffDuration10x",
+        "zh_desc": "將所有藥水（敏捷、耐力、專注等）、料理食物與技能附魔的增益狀態（Buff）持續時間延長為原本的 10 倍。",
+        "has_in_game_text": False,
+    },
+    "nexus:838": {
+        "zh_name": "多人連線儲物箱超遠距連動",
+        "en_name": "ChestLink Multiplayer PC",
+        "zh_desc": "將多人連線與單人模式的已連結儲物箱（Linked Storage）建造與製作讀取範圍擴展至 1,000 公里（按 F7 可手動重整快取）。",
+        "has_in_game_text": False,
+    },
+    "nexus:667": {
+        "zh_name": "農作收成自動免費重播種",
+        "en_name": "Don't Replant",
+        "zh_desc": "農作物收成後自動於原農地免費重新播種（不消耗種子），保留完整產量與農耕經驗值，並使單次堆肥可維持 2 次收成。",
+        "has_in_game_text": True,
+    },
+    "nexus:499": {
+        "zh_name": "敵人與寶箱掉落物全面擴充",
+        "en_name": "Extended Enemy Drops",
+        "zh_desc": "擴充各類怪物（如深淵惡魔等）、鳥巢與世界寶箱的戰利品掉落表，提高稀有素材、符文精華與專屬武器的掉落機率與數量。",
+        "has_in_game_text": False,
+    },
+    "nexus:737": {
+        "zh_name": "農作物收成產量倍增",
+        "en_name": "FarmYield",
+        "zh_desc": "將農地作物的收成產量預設提升為 3 倍（可透過遊戲內 Mod Menu 自由調整 1x 至 10x 收成倍率）。",
+        "has_in_game_text": True,
+    },
+    "nexus:663": {
+        "zh_name": "快速進食飲水與秒睡過夜",
+        "en_name": "Fast Eating and Sleeping",
+        "zh_desc": "移除進食、飲水與喝藥水之間的 2 秒冷卻等待；夜晚睡眠過夜縮短至 0.5 秒完成，白天躺床小憩恢復體力速度提升為 3 倍。",
+        "has_in_game_text": True,
+    },
+    "nexus:827": {
+        "zh_name": "技能經驗典籍無延遲秒讀",
+        "en_name": "Fast Tomes",
+        "zh_desc": "移除閱讀經驗值技能典籍（Skill Tomes）之間的 2 秒使用延遲，可連續快速閱讀全部 28 種技能書。",
+        "has_in_game_text": False,
+    },
+    "nexus:385": {
+        "zh_name": "世界寶箱快速重生",
+        "en_name": "FasterChestRespawn",
+        "zh_desc": "大幅縮短野外與地城中戰利品寶箱的重新生成冷卻時間，方便重複探索收集物資。",
+        "has_in_game_text": False,
+    },
+    "nexus:826": {
+        "zh_name": "磁石地圖好友快速傳送",
+        "en_name": "Friend Fast Travel",
+        "zh_desc": "站在已啟用的磁石（Lodestone）旁開啟地圖時，可直接點擊隊友或好友標記並消耗法則符文（Law Runes）瞬間傳送至好友身邊。",
+        "has_in_game_text": False,
+    },
+    "nexus:557": {
+        "zh_name": "全能農耕與探索法術強化",
+        "en_name": "Greater Farming",
+        "zh_desc": "擴大堆肥術、濕潤術、碎木術與飛斧投射範圍；縮短裝備法術冷卻 50%；擴大敏捷光球拾取範圍 3 倍；符文祭壇單次製作上限提升至 1,000。",
+        "has_in_game_text": True,
+    },
+    "nexus:134": {
+        "zh_name": "強化濕潤魔法 Lv.3",
+        "en_name": "GreaterHumidify Level 3",
+        "zh_desc": "強化「濕潤（Humidify）」實用魔法至最高等級效果，大幅提升澆灌農田與裝填水容器的效率與範圍。",
+        "has_in_game_text": False,
+    },
+    "nexus:459": {
+        "zh_name": "強化快速生長魔法 Lv.3",
+        "en_name": "GreaterRapidGrowth Level 3",
+        "zh_desc": "強化「快速生長（Rapid Growth）」農業魔法至最高等級效果，大幅加速農田作物的生長階段。",
+        "has_in_game_text": False,
+    },
+    "nexus:574": {
+        "zh_name": "返家傳送術無冷卻",
+        "en_name": "HomeTeleportNoCooldown",
+        "zh_desc": "移除「返家傳送（Home Teleport）」法術的冷卻時間（預設 0 秒，可於遊戲內 Mod Menu 自訂秒數）。",
+        "has_in_game_text": True,
+    },
+    "nexus:397": {
+        "zh_name": "鏟子瞬間挖掘",
+        "en_name": "InstantSpade",
+        "zh_desc": "移除使用鏟子（Spade）挖掘地面、農田或樹根時的蓄力與動作等待時間，實現瞬間挖掘。",
+        "has_in_game_text": False,
+    },
+    "nexus:839": {
+        "zh_name": "儲物帳本與工作台連動範圍擴大",
+        "en_name": "LedgerRange",
+        "zh_desc": "將儲物帳本（Storage Ledger）與製作工作台讀取已連結儲物箱的距離從原版 30 公尺擴大至 100 公尺。",
+        "has_in_game_text": False,
+    },
+    "nexus:548": {
+        "zh_name": "遊戲內模組設定選單 (Mod Menu)",
+        "en_name": "Mod Menu",
+        "zh_desc": "在遊戲暫停選單（Esc）新增「模組設定 (MODS)」按鈕與 F4 快捷面板，可在遊戲中即時調整各模組參數、檢查按鍵衝突與運行狀態。",
+        "has_in_game_text": True,
+    },
+    "nexus:271": {
+        "zh_name": "個人儲物箱容量擴充 +++",
+        "en_name": "MorePersonalChestStorage3",
+        "zh_desc": "大幅擴充個人儲物箱（Personal Chest）的存放格數上限，解決基地物資儲存空間不足問題。",
+        "has_in_game_text": False,
+    },
+    "nexus:334": {
+        "zh_name": "施放魔法期間自由移動",
+        "en_name": "MoveWithMagic",
+        "zh_desc": "解除施放各類法術與實用魔法時的原地定身限制，讓角色在詠唱與施法過程中仍可自由移動閃避。",
+        "has_in_game_text": False,
+    },
+    "nexus:360": {
+        "zh_name": "裝備與工具永不損耗耐久度",
+        "en_name": "NoDurabilityLoss",
+        "zh_desc": "所有武器、防具與採集工具在使用與戰鬥時均不會扣除耐久度，免除頻繁維修裝備的困擾。",
+        "has_in_game_text": False,
+    },
+    "nexus:367": {
+        "zh_name": "進食與飲水無動作延遲",
+        "en_name": "NoEatingDelay",
+        "zh_desc": "透過 Pak 資產層級移除食用料理與飲水時的動作延遲，可在戰鬥中迅速補充生命值與狀態。",
+        "has_in_game_text": False,
+    },
+    "nexus:299": {
+        "zh_name": "全法術技能零冷卻時間",
+        "en_name": "NoSpellCooldown",
+        "zh_desc": "移除戰鬥與實用魔法技能的冷卻時間限制，可連續施放法術。",
+        "has_in_game_text": False,
+    },
+    "nexus:301": {
+        "zh_name": "傳送魔法免消耗符文",
+        "en_name": "NoTeleportCost",
+        "zh_desc": "使用磁石網路或傳送類魔法時免除符文（Runes）消耗，實現免費自由傳送。",
+        "has_in_game_text": False,
+    },
+    "nexus:597": {
+        "zh_name": "背包一鍵快速堆疊至鄰近箱子",
+        "en_name": "QuickStack",
+        "zh_desc": "開啟背包時按 Y 鍵（或手把長按 Y）即可將背包物品一鍵快速堆疊至周圍 15 公尺內的箱子；按滑鼠中鍵可鎖定排除特定欄位物品。",
+        "has_in_game_text": True,
+    },
+    "nexus:845": {
+        "zh_name": "遊戲設定自由開關 (零負重/死亡保物/不壞)",
+        "en_name": "RSDSFreedom",
+        "zh_desc": "在遊戲原生的「設定 > 遊戲玩法」選單中新增三個繁體中文開關：「物品無重量」、「死亡時保留物品」、「物品不會損壞」，預設全數啟用。",
+        "has_in_game_text": True,
+    },
+    "nexus:653": {
+        "zh_name": "儲物帳本銀行化總管介面 (Stashlink)",
+        "en_name": "Stashlink",
+        "zh_desc": "在儲物帳本按 F（或 F6）開啟大型分類銀行介面，整合基地內所有已連結儲物箱，支援 10 大自動分類、自訂分頁、關鍵字搜尋、裝備欄檢視與批次存取。",
+        "has_in_game_text": True,
+    },
+    "nexus:571": {
+        "zh_name": "加工站自動補料與配方載入面板",
+        "en_name": "Station Feeder",
+        "zh_desc": "開啟熔爐、鋸木機、紡車、製革架、大鍋等 13 種加工站時，自動從鄰近箱子補滿現有原料與燃料，並在視窗旁提供一鍵「載入並啟動」配方側邊欄。",
+        "has_in_game_text": True,
+    },
+    "nexus:339": {
+        "zh_name": "無限衝刺閃避 (Unlimited Surge)",
+        "en_name": "UnlimitedSurge",
+        "zh_desc": "移除「衝刺（Surge）」位移技能的冷卻限制，提供高速跑圖與靈活戰鬥閃避體驗。",
+        "has_in_game_text": False,
+    },
+    "nexus:753": {
+        "zh_name": "物品 50 倍堆疊上限且零負重",
+        "en_name": "x50 Stacks No Weight",
+        "zh_desc": "所有可堆疊物品的單格堆疊上限提升為 50 倍（最高 9,999 個），且所有堆疊物資重量設為 0，大幅釋放背包與箱子空間。",
+        "has_in_game_text": False,
+    },
+}
+
 
 # 壓縮檔內容清單記憶體快取: {archive_path: (mtime, size, entries_list)}
 _ARCHIVE_ENTRIES_CACHE: Dict[str, Tuple[float, int, List[str]]] = {}
@@ -200,8 +387,11 @@ def detect_game_path() -> str:
 
     # 2. 檢查工具是否直接放在遊戲目錄內或子目錄內
     for parent in [ROOT_DIR, ROOT_DIR.parent, ROOT_DIR.parent.parent]:
-        if is_valid_game_dir(str(parent)):
-            return str(parent.resolve())
+        try:
+            if is_valid_game_dir(str(parent)):
+                return os.path.abspath(str(parent))
+        except Exception:
+            continue
 
     # 3. 透過 Steam 登錄檔與全磁碟庫掃描
     steam_path = get_steam_path()
@@ -829,11 +1019,23 @@ def analyze_mod_archive(archive_path: str, game_path: str = "", ledger: Optional
     if ledger is None:
         ledger = load_installed_versions(game_path)
 
+    meta = MOD_CATALOG_METADATA.get(mod_key, {})
+    en_name = str(meta.get("en_name") or raw_title)
+    zh_name = str(meta.get("zh_name") or raw_title)
+    zh_desc = str(meta.get("zh_desc") or f"擴充模組：{raw_title}")
+    has_in_game_text = bool(meta.get("has_in_game_text", False))
+    display_name = f"{zh_name} ({en_name})" if zh_name != en_name else zh_name
+
     info = {
         "mod_key": mod_key,
         "filename": fname,
         "filepath": archive_path,
         "name": raw_title,
+        "en_name": en_name,
+        "zh_name": zh_name,
+        "display_name": display_name,
+        "zh_desc": zh_desc,
+        "has_in_game_text": has_in_game_text,
         "mod_id": mod_id,
         "version": ver,
         "category": "一般模組",
@@ -1272,10 +1474,611 @@ def install_single_archive(archive_path: str, game_path: str, mod_info: Optional
         return False, f"無法識別壓縮檔結構: {fname}"
 
 
+# =========================================================================
+# 6. 遊戲內模組介面與設定選單 (Mod Menu / UMG HUD) 繁體中文化引擎
+# =========================================================================
+
+MODMENU_TRANSLATIONS: Dict[str, Dict] = {
+    "DontReplant": {
+        "name": "農作收成自動免費重播種 (Don't Replant)",
+        "description": "農作物收成後會自動保留在農地中並免費重新播種。澆水、堆肥與病害機制維持原版規則（多人連線僅需房主安裝）。",
+        "settings": {
+            "Enabled": {
+                "label": "收成後保留農作物",
+                "tooltip": "關閉時恢復原版單次收成規則（僅世界擁有者或單人模式生效）。",
+            },
+            "Replant": {
+                "label": "收成後免費重新播種",
+                "tooltip": "開啟時每次收成皆可獲得完整產量與農耕經驗值，並自動免費重播相同種子；關閉時農地將改為類似漿果叢模式。",
+            },
+            "CompostHarvests": {
+                "label": "單次堆肥可維持收成次數",
+                "tooltip": "設定施放一次堆肥可維持幾次免費重播收成。1 = 原版（每次收成後需重新堆肥）。",
+            },
+            "NoDisease": {
+                "label": "停用農作物病害",
+                "tooltip": "開啟時農作物永遠不會生病（已生病的植株仍需治療）；關閉為原版機率。",
+            },
+            "Exclude": {
+                "label": "保留原版單次收成的作物名單",
+                "tooltip": "輸入維持原版單次收成的作物英文名稱（以逗號分隔，例如：Wheat, Flax）。",
+            },
+            "FullXp": {
+                "label": "每次收成皆獲得完整農耕經驗值",
+                "tooltip": "讓漿果叢與舊農地在後續收成時依然給予 100% 農耕經驗值（原版第二次起僅給 5%）。",
+            },
+            "Verbose": {
+                "label": "輸出詳細除錯日誌",
+                "tooltip": "將每次農地狀態變更寫入 UE4SS.log，僅在測試或回報問題時需要開啟。",
+            },
+        },
+    },
+    "FarmYield": {
+        "name": "農作物收成產量倍增 (Farm Yield)",
+        "description": "在遊玩過程中即時調整農田作物的收成產量倍率。",
+        "settings": {
+            "Enabled": {
+                "label": "啟用農作產量倍增",
+            },
+            "Multiplier": {
+                "label": "農作收成倍率",
+            },
+        },
+    },
+    "FastEatSleep": {
+        "name": "快速進食飲水與秒睡過夜 (Fast Eating & Sleeping)",
+        "description": "移除進食與飲水之間的冷卻等待、夜晚睡眠縮短至 0.5 秒完成，並可調整白天躺床小憩恢復體力的速度倍率。",
+        "header_labels": {
+            "Napping": "白天躺床小憩 (Napping)",
+            "Other": "其他設定",
+        },
+        "settings": {
+            "Enabled": {
+                "label": "啟用模組功能",
+                "tooltip": "關閉時完全恢復遊戲原版設定（變更後需重啟遊戲）。",
+            },
+            "FastEating": {
+                "label": "快速進食與飲水",
+                "tooltip": "移除連續食用料理與飲水之間的 2 秒冷卻等待時間。",
+            },
+            "Potions": {
+                "label": "藥水同步套用無冷卻",
+                "tooltip": "讓各類增益與治療藥水也享有零冷卻連續飲用效果。",
+            },
+            "FastSleep": {
+                "label": "夜晚秒睡過夜",
+                "tooltip": "夜晚睡眠過夜時間從原版約 5 秒縮短至 0.5 秒完成。",
+            },
+            "NapSpeed": {
+                "label": "白天小憩體力恢復倍率",
+                "tooltip": "調整白天躺床休息時的體力恢復速度。1x 為原版速度（半格約需 50 秒），3x 約 17 秒，5x 約 10 秒，設定後立即生效。",
+            },
+            "Verbose": {
+                "label": "輸出詳細除錯日誌",
+                "tooltip": "在日誌中記錄每一項被修改的食物與飲品項目。",
+            },
+        },
+    },
+    "GreaterFarming": {
+        "name": "全能農耕與探索法術強化 (Greater Farming)",
+        "description": "擴大農耕與伐木法術範圍、縮短技能冷卻、擴大敏捷光球拾取半徑並提升符文祭壇單次製作上限（設定立即生效，祭壇設定於下次開啟祭壇時套用）。",
+        "header_labels": {
+            "Farming spells": "農業魔法強化",
+            "Spell cooldowns": "法術冷卻時間",
+            "Axtral Projection": "飛斧投射術 (Axtral Projection)",
+            "Splinter": "碎木術 (Splinter)",
+            "Agility": "敏捷訓練與光球",
+            "Carry weight": "角色負重調整",
+            "Runecrafting": "符文製作與祭壇 (Runecrafting)",
+        },
+        "settings": {
+            "Mucksplosion": {
+                "label": "擴大堆肥術 (Mucksplosion) 範圍",
+                "tooltip": "啟用更大範圍的農田魔法堆肥效果。",
+            },
+            "MucksplosionRadius": {
+                "label": "堆肥術作用半徑",
+                "tooltip": "遊戲原版預設範圍為 100。",
+            },
+            "Humidify": {
+                "label": "擴大濕潤術 (Humidify) 範圍",
+                "tooltip": "啟用更大範圍的農田魔法澆水效果。",
+            },
+            "HumidifyRadius": {
+                "label": "濕潤術作用半徑",
+                "tooltip": "遊戲原版預設範圍為 150。",
+            },
+            "Cooldowns": {
+                "label": "縮短已裝備法術冷卻時間",
+                "tooltip": "啟用裝備法術的冷卻時間倍率縮減。",
+            },
+            "CooldownMultiplier": {
+                "label": "法術冷卻時間倍率",
+                "tooltip": "0.5 = 冷卻時間減半，1.0 = 原版正常冷卻。",
+            },
+            "AxtralProjection": {
+                "label": "啟用飛斧投射術強化",
+                "tooltip": "總開關：啟用或停用下方飛斧距離、速度與寬度強化。",
+            },
+            "AxtralDistance": {
+                "label": "飛斧飛行距離",
+                "tooltip": "控制飛斧投射的最遠距離，遊戲原版為 2000。",
+            },
+            "AxtralSpeed": {
+                "label": "飛斧飛行速度",
+                "tooltip": "控制飛斧飛行的速度，遊戲原版為 1000。",
+            },
+            "AxtralWidth": {
+                "label": "飛斧命中寬度",
+                "tooltip": "控制飛斧左右兩側的砍伐判定寬度，建議設為 3 左右效果最佳。",
+            },
+            "Splinter": {
+                "label": "擴大碎木術 (Splinter) 範圍",
+                "tooltip": "啟用更大範圍的碎木術作用區域。",
+            },
+            "SplinterRadiusMultiplier": {
+                "label": "碎木術範圍倍率",
+                "tooltip": "1x = 遊戲原版大小。",
+            },
+            "SplinterPlacementDistance": {
+                "label": "碎木術施放距離",
+                "tooltip": "控制可將碎木術施放於多遠的位置。原版為 1500，0 代表不修改。",
+            },
+            "AgilityOrbs": {
+                "label": "擴大敏捷與耐力光球拾取範圍",
+                "tooltip": "讓敏捷訓練場的光球與耐力球更容易被角色觸碰吸收。",
+            },
+            "AgilityOrbRadius": {
+                "label": "光球拾取範圍倍率",
+                "tooltip": "1x = 原版範圍。過高的倍率可能會影響部分敏捷路線判定。",
+            },
+            "CarryWeightPercent": {
+                "label": "物品負重比例",
+                "tooltip": "調整身上物品的重量比例。100% = 原版正常重量，50% = 可攜帶兩倍物品，0% = 完全零負重。",
+            },
+            "Runecrafting": {
+                "label": "提高符文祭壇單次製作上限",
+                "tooltip": "突破原版符文祭壇的單次合成數量限制（下次開啟符文祭壇時生效）。",
+            },
+            "RuneLimit": {
+                "label": "單次符文製作上限",
+                "tooltip": "原版上限為 50，預設提升至 1000（下次開啟符文祭壇時生效）。",
+            },
+            "AutocraftBonus": {
+                "label": "自動製作符文享 100% 額外產量加成",
+                "tooltip": "自動合成符文時同樣獲得完整 +100% 額外符文產出（實驗性功能，關閉需重啟遊戲）。",
+            },
+            "AutocraftXP": {
+                "label": "自動製作符文經驗值倍率",
+                "tooltip": "1.0x = 獲得完整 100% 經驗值（原版自動製作僅給 0.25x），0 = 維持原版。",
+            },
+        },
+    },
+    "HomeTeleportNoCooldown": {
+        "name": "返家傳送術無冷卻 (Home Teleport No Cooldown)",
+        "description": "移除或縮短「返家傳送（Home Teleport）」法術的冷卻時間，解鎖條件與詠唱規則維持不變。",
+        "settings": {
+            "Enabled": {
+                "label": "啟用返家傳送冷卻調整",
+                "tooltip": "關閉時立即恢復遊戲原版的返家傳送冷卻時間。",
+            },
+            "CooldownSeconds": {
+                "label": "返家傳送冷卻秒數",
+                "tooltip": "設定啟用期間的返家傳送冷卻秒數，0s 代表完全零冷卻。",
+            },
+        },
+    },
+    "ModMenu": {
+        "name": "遊戲內模組設定選單 (Mod Menu)",
+        "description": "集中管理所有已安裝模組的參數設定、快捷面板釘選、按鍵衝突檢查與運行診斷。",
+        "header_labels": {
+            "Menu": "主選單設定",
+            "Quick Panel": "遊戲內快捷面板 (Quick Panel)",
+        },
+        "settings": {
+            "ShowInPauseMenu": {
+                "label": "在暫停選單 (Esc) 顯示「模組設定 (MODS)」按鈕",
+                "tooltip": "除非已在下方設定專用開啟快捷鍵，否則請保持開啟，以免無法進入模組選單。",
+            },
+            "MenuKey": {
+                "label": "隨處開啟模組選單快捷鍵 (選填)",
+                "tooltip": "可在遊戲任何畫面（包含主選單）直接開啟此模組設定選單，請避免使用 F10 與 F11。",
+            },
+            "PanelScale": {
+                "label": "介面文字與列表縮放比例",
+                "tooltip": "調整模組選單內的字體與列高比例（80% ~ 140%），放開滑桿後立即重新繪製。",
+            },
+            "QuickPanel": {
+                "label": "顯示遊戲內釘選快捷面板",
+                "tooltip": "在遊玩畫面側邊顯示您釘選（PIN）的常用模組設定小面板。",
+            },
+            "QuickEditKey": {
+                "label": "編輯快捷面板熱鍵",
+                "tooltip": "在遊戲中按下此按鍵（預設 F4）即可用滑鼠拖曳快捷面板滑桿或切換開關；再按一次或按 Esc 返回遊玩。",
+            },
+            "QuickPadEdit": {
+                "label": "手把長按 View 鍵編輯快捷面板",
+                "tooltip": "開啟時可長按手把 View 鍵直接操作快捷面板；關閉時可從本選單的「已釘選項目」頁面修改。",
+            },
+            "QuickX": {
+                "label": "快捷面板水平位置 (距離左緣)",
+                "tooltip": "調整快捷面板距離螢幕左側邊緣的水平百分比位置。",
+            },
+            "QuickY": {
+                "label": "快捷面板垂直位置 (距離頂部)",
+                "tooltip": "調整快捷面板距離螢幕頂部邊緣的垂直百分比位置。",
+            },
+        },
+    },
+    "ModMenuExample": {
+        "name": "模組選單控制項範例 (Mod Menu Example)",
+        "description": "展示 Mod Menu 2.0 支援的所有控制項類型（滑桿、數值、開關、多選、熱鍵、文字框與動作按鈕）。",
+        "header_labels": {
+            "Numbers": "數值與滑桿控制項",
+            "Switches": "開關與模式選擇",
+            "Extras": "進階控制項",
+        },
+        "settings": {
+            "Rate": {"label": "倍率滑桿 (Rate)", "tooltip": "帶小數點的滑桿範例。"},
+            "Count": {
+                "label": "數量滑桿 (Count)",
+                "tooltip": "整數滑桿範例（0 與 20 會顯示自訂中文標籤）。",
+                "valueLabels": {"0": "無", "20": "最大"},
+            },
+            "Enabled": {"label": "啟用開關 (Enabled)", "tooltip": "核取方塊開關範例。"},
+            "Mode": {
+                "label": "模式切換 (Mode)",
+                "tooltip": "多選輪播切換範例。",
+                "valueLabels": {"Simple": "簡易模式", "Detailed": "詳細模式", "Off": "關閉"},
+            },
+            "Hotkey": {"label": "快捷鍵設定 (Hotkey)", "tooltip": "按鍵綁定範例（重啟遊戲後生效）。"},
+            "Title": {"label": "自訂標題文字 (Title)", "tooltip": "文字輸入框範例（僅在啟用開關開啟時顯示）。"},
+        },
+        "button_actions": {
+            "hello": {"label": "發送測試問候", "tooltip": "向範例模組發送測試動作事件。"},
+        },
+    },
+    "RuneSchema": {
+        "name": "RuneSchema 數據擴充框架設定",
+        "description": "與 Helpy 工具共用的核心快速設定（儲存於 RuneSchema/settings/settings.ini），包含存檔清理策略、Helpy 快捷鍵與診斷紀錄。",
+        "header_labels": {
+            "Save cleanup": "存檔清理與安全防護",
+            "Helpy shortcut": "Helpy 輔助工具快捷鍵",
+            "Startup and diagnostics": "啟動與診斷日誌設定",
+        },
+        "settings": {
+            "blanketCleanup": {
+                "label": "全域存檔清理模式 (備援)",
+                "tooltip": "開啟時在安全載入邊界對所有支援的本地存檔執行廣泛清理；關閉時僅針對所選角色/世界（務必保留備份）。",
+            },
+            "cleanupOnWorldEntry": {
+                "label": "下次進入世界時套用清理變更",
+                "tooltip": "開啟時會在下次進入角色/世界時讀取已儲存的清理選項；關閉時維持本次工作階段策略直到重啟遊戲。",
+            },
+            "allowCorruptCharacterEntry": {
+                "label": "預設啟用損毀角色存檔繞過 (Save Bypass)",
+                "tooltip": "開啟時優先繞過存檔檢查以載入異常角色（請務必做好存檔備份，此功能不會修復已損壞的資料）。",
+            },
+            "helpyHotkey": {
+                "label": "Helpy 遊戲內工具快捷鍵",
+                "tooltip": "設定開啟 Helpy 輔助面板的快捷鍵（預設 F2，在此處修改後需重啟遊戲生效）。",
+            },
+            "autoUpdateMappings": {
+                "label": "自動更新反射映射表 (Mappings)",
+            },
+            "advancedLogging": {
+                "label": "啟用 RuneSchema 詳細除錯日誌",
+            },
+            "archiveLogs": {
+                "label": "自動封存歷史 RuneSchema 日誌",
+            },
+        },
+    },
+    "StationFeeder": {
+        "name": "加工站自動補料與配方載入面板 (Station Feeder)",
+        "description": "開啟加工站時自動從附近箱子補滿原料與燃料，並在加工站視窗旁顯示一鍵「載入並啟動」配方側邊欄（設定立即生效）。",
+        "header_labels": {
+            "Feeding": "加工站自動補料設定",
+            "Recipe panel": "加工站配方側邊欄設定",
+            "Safety": "儲物箱安全與多人連線設定",
+        },
+        "settings": {
+            "Enabled": {
+                "label": "啟用加工站自動補料與面板",
+                "tooltip": "關閉時所有加工站恢復遊戲原版行為，不會自動搬移任何物品。",
+            },
+            "FeedMode": {
+                "label": "自動補料模式",
+                "tooltip": "「自動補滿現有欄位」：僅補滿加工站欄位內已有的材料；「依配方自動填入」：自動挑選箱子材料足夠的配方並填滿。",
+                "valueLabels": {
+                    "topup": "自動補滿現有欄位",
+                    "recipe": "依配方自動填入",
+                },
+            },
+            "FeedResources": {
+                "label": "自動補充原料欄位",
+                "tooltip": "自動將加工站支援的原料從附近儲物箱補入原料欄。",
+            },
+            "FeedFuel": {
+                "label": "自動補充燃料欄位",
+                "tooltip": "自動將加工站支援的燃料補入燃料欄（若燃料已燒光，需開啟「記住上次投入配方」才會自動重補）。",
+            },
+            "RememberLastLoad": {
+                "label": "記住每個加工站上次投入的材料",
+                "tooltip": "當加工站原料或燃料完全耗盡時，開啟加工站仍會自動依上次記憶的品項補貨；手動清空加工站即可清除該站記憶。",
+            },
+            "Radius": {
+                "label": "搜尋儲物箱半徑距離",
+                "tooltip": "設定搜尋加工站周圍儲物箱的距離。設為 0 m 代表使用遊戲預設的已連結儲物箱範圍（30 公尺）。",
+            },
+            "KeepOne": {
+                "label": "每個儲物箱至少保留 1 個物品種子",
+                "tooltip": "開啟時絕不會拿走箱子裡最後 1 個物品（例如箱內有 5 個銅礦時最多拿走 4 個），方便維持箱子分類排版。",
+            },
+            "ShowPanel": {
+                "label": "在加工站旁顯示配方側邊欄",
+                "tooltip": "在加工站視窗旁顯示所有可製作配方與可製作數量，支援一鍵「載入並啟動」（僅限單人與多人房主）。",
+            },
+            "PanelUsesBackpack": {
+                "label": "配方側邊欄允許動用角色背包材料",
+                "tooltip": "點擊「載入材料」或「載入並啟動」時，優先從儲物箱取料，不足部分再從角色背包補齊（自動補料永遠不會動用背包）。",
+            },
+            "ReturnLeftovers": {
+                "label": "切換配方時自動將舊材料退回儲物箱",
+                "tooltip": "載入不同配方時，自動將加工站內用不到的舊原料退回附近的儲物箱（絕不會塞滿角色背包）。",
+            },
+            "DefaultQuantity": {
+                "label": "配方預設製作數量",
+                "tooltip": "選擇點選配方時的預設數量：「上次設定數量」或「最大可製作量」。",
+                "valueLabels": {
+                    "max": "最大可製作量",
+                    "last": "上次設定數量",
+                },
+            },
+            "PanelKeys": {
+                "label": "啟用配方側邊欄鍵盤快捷鍵",
+                "tooltip": "開啟面板時：左右方向鍵可調整製作數量，按 Enter 鍵直接執行「載入並啟動」。",
+            },
+            "SkipLockedChests": {
+                "label": "略過上鎖與私人儲物箱",
+                "tooltip": "略過已上鎖或標記為私人的儲物箱。若您習慣將自己的箱子設為私人，請取消勾選此項以免模組找不到材料。",
+            },
+            "WorkWhenJoined": {
+                "label": "加入他人世界或專用伺服器時仍啟用",
+                "tooltip": "在加入別人的合作世界或伺服器時依然可使用自動補料（每次搬移需與伺服器同步約 1~2 秒）。",
+            },
+            "Verbose": {
+                "label": "輸出詳細搬移日誌",
+                "tooltip": "將每次物品搬移記錄寫入 UE4SS.log，僅在回報問題時需要開啟。",
+            },
+        },
+        "button_actions": {
+            "ForgetStations": {
+                "label": "清除所有加工站記憶",
+            },
+        },
+    },
+}
+
+
+def _localize_modmenu_json_file(json_path: Path) -> bool:
+    """將單一 modmenu.json / modmenu.txt 檔案內的顯示名稱、描述、選項標籤與提示中文化，保留所有鍵值與邏輯不變"""
+    if not json_path.exists():
+        return False
+    try:
+        raw_text = json_path.read_text(encoding="utf-8", errors="ignore")
+        data = json.loads(raw_text)
+    except Exception:
+        return False
+
+    if not isinstance(data, dict):
+        return False
+
+    mod_id = str(data.get("id") or json_path.parent.name)
+    trans = MODMENU_TRANSLATIONS.get(mod_id)
+    if not trans:
+        return False
+
+    if "name" in trans:
+        data["name"] = trans["name"]
+    if "description" in trans:
+        data["description"] = trans["description"]
+
+    header_map = trans.get("header_labels", {})
+    settings_map = trans.get("settings", {})
+    btn_map = trans.get("button_actions", {})
+
+    settings_list = data.get("settings")
+    if isinstance(settings_list, list):
+        for item in settings_list:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("type", "")
+            if item_type == "header":
+                orig_label = str(item.get("label", ""))
+                if orig_label in header_map:
+                    item["label"] = header_map[orig_label]
+                continue
+
+            if item_type == "button":
+                act = str(item.get("action", ""))
+                if act in btn_map:
+                    if "label" in btn_map[act]:
+                        item["label"] = btn_map[act]["label"]
+                    if "tooltip" in btn_map[act]:
+                        item["tooltip"] = btn_map[act]["tooltip"]
+                continue
+
+            key = str(item.get("key", ""))
+            if key and key in settings_map:
+                s_trans = settings_map[key]
+                if "label" in s_trans:
+                    item["label"] = s_trans["label"]
+                if "tooltip" in s_trans:
+                    item["tooltip"] = s_trans["tooltip"]
+                if "valueLabels" in s_trans:
+                    item["valueLabels"] = s_trans["valueLabels"]
+
+    try:
+        json_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return True
+    except Exception:
+        return False
+
+
+def _replace_pairs_in_file(file_path: Path, replacements: List[Tuple[str, str]]) -> bool:
+    """安全替換指定 Lua 腳本中的介面顯示字串（UTF-8 無 BOM）"""
+    if not file_path.exists():
+        return False
+    try:
+        content = file_path.read_text(encoding="utf-8", errors="ignore")
+        orig_content = content
+        for old_str, new_str in replacements:
+            if old_str in content:
+                content = content.replace(old_str, new_str)
+        if content != orig_content:
+            file_path.write_text(content, encoding="utf-8")
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def apply_mod_text_translations(game_path: str) -> Tuple[int, List[str]]:
+    """
+    對遊戲目錄內已安裝的模組執行完整繁體中文化：
+    1. 漢化所有模組的 modmenu.json / modmenu.txt 設定選單項目、標題、說明與滑桿選項標籤
+    2. 漢化 ModMenu 主介面、StationFeeder 加工站配方側邊欄、QuickStack 背包提示、
+       RSDSFreedom 原生設定選項與 Stashlink 儲物總管分類標籤
+    回傳 (成功漢化的檔案數量, 已漢化模組名稱清單)
+    """
+    if not is_valid_game_dir(game_path):
+        return 0, []
+
+    mods_root = Path(game_path) / "RSDragonwilds" / "Binaries" / "Win64" / "ue4ss" / "Mods"
+    if not mods_root.exists():
+        return 0, []
+
+    localized_count = 0
+    localized_mods: List[str] = []
+
+    # 1. 掃描並漢化所有 modmenu.json 與 modmenu.txt
+    for root, _, files in os.walk(mods_root):
+        for f in files:
+            if f.lower() in ("modmenu.json", "modmenu.txt"):
+                fpath = Path(root) / f
+                if _localize_modmenu_json_file(fpath):
+                    localized_count += 1
+                    mod_folder_name = Path(root).name
+                    if mod_folder_name not in localized_mods:
+                        localized_mods.append(mod_folder_name)
+
+    # 2. 漢化 ModMenu 主介面與暫停選單按鈕 (ModMenu/Scripts/main.lua)
+    modmenu_lua = mods_root / "ModMenu" / "Scripts" / "main.lua"
+    if _replace_pairs_in_file(modmenu_lua, [
+        ('MENU.label = "MODS"', 'MENU.label = "模組設定 (MODS)"'),
+        ('LAY.text(ui, "MOD MENU", 26, GOLD, false, "title")', 'LAY.text(ui, "模組設定選單 (MOD MENU)", 26, GOLD, false, "title")'),
+        ('ui.search:SetHintText(FText("Search every setting"))', 'ui.search:SetHintText(FText("搜尋所有模組設定項目..."))'),
+        ('LAY.text(ui, "CHECKS", 14, GREY, false, "title")', 'LAY.text(ui, "系統檢查", 14, GREY, false, "title")'),
+        ('{ { "health", "Health check" }, { "keys", "Keys" }, { "pinned", "Pinned" } }', '{ { "health", "狀態檢查" }, { "keys", "快捷鍵一覽" }, { "pinned", "已釘選項目" } }'),
+        ('LAY.text(ui, "MODS", 14, GREY, false, "title")', 'LAY.text(ui, "已安裝模組", 14, GREY, false, "title")'),
+        ('local resetB = fbtn("RESET PAGE")', 'local resetB = fbtn("重置本頁")'),
+        ('local closeB = fbtn("CLOSE")', 'local closeB = fbtn("關閉")'),
+        ('local reportB = fbtn("SAVE REPORT")', 'local reportB = fbtn("儲存診斷報告")'),
+        ('w:SetNoKeySpecifiedText(FText("Not set"))', 'w:SetNoKeySpecifiedText(FText("未設定"))'),
+        ('w:SetKeySelectionText(FText("Press a key..."))', 'w:SetKeySelectionText(FText("請按下按鍵..."))'),
+        ('LAY.MOUSE_HINT = "Point at a setting to read about it here."', 'LAY.MOUSE_HINT = "將滑鼠游標移至設定項目上即可在此查看詳細說明。"'),
+    ]):
+        localized_count += 1
+        if "ModMenu" not in localized_mods:
+            localized_mods.append("ModMenu")
+
+    # 3. 漢化 StationFeeder 加工站側邊配方控制面板 (StationFeeder/Scripts/main.lua & recipes.lua)
+    sf_main_lua = mods_root / "StationFeeder" / "Scripts" / "main.lua"
+    if _replace_pairs_in_file(sf_main_lua, [
+        ('textIn(ui, col, "v", "REQUIREMENTS", 13, DIM)', 'textIn(ui, col, "v", "所需材料", 13, DIM)'),
+        ('textIn(ui, qh, "h", "QUANTITY", 13, DIM)', 'textIn(ui, qh, "h", "製作數量", 13, DIM)'),
+        ('buttonIn(ui, mb, "box", "MAX", { kind = "max" })', 'buttonIn(ui, mb, "box", "最大", { kind = "max" })'),
+        ('actBtn(210, "LOAD & START", { kind = "loadstart" }, ui.primary, 8)', 'actBtn(210, "載入並啟動", { kind = "loadstart" }, ui.primary, 8)'),
+        ('actBtn(100, "LOAD", { kind = "load" }, nil, 8)', 'actBtn(100, "載入材料", { kind = "load" }, nil, 8)'),
+        ('actBtn(110, "START", { kind = "toggle" }, nil, 0)', 'actBtn(110, "啟動", { kind = "toggle" }, nil, 0)'),
+        ('ui.toggle:SetLabelText(FText(run and "STOP" or "START"))', 'ui.toggle:SetLabelText(FText(run and "停止" or "啟動"))'),
+        ('setText(ui.name, #st.recipes == 0 and "NO RECIPES" or "PICK A RECIPE")', 'setText(ui.name, #st.recipes == 0 and "無可用配方" or "請選擇配方")'),
+        ('setText(fq.text, "NO FUEL")', 'setText(fq.text, "無燃料")'),
+        ('setText(ui.caption, cfg.PanelUsesBackpack and "PULLS FROM BACKPACK + LINKED CHESTS" or "PULLS FROM LINKED CHESTS")',
+         'setText(ui.caption, cfg.PanelUsesBackpack and "材料來源：背包 + 已連結儲物箱" or "材料來源：附近已連結儲物箱")'),
+        ('if not rec.unlocked then setText(ui.status, "Not unlocked yet"); return end',
+         'if not rec.unlocked then setText(ui.status, "尚未解鎖此配方"); return end'),
+    ]):
+        localized_count += 1
+        if "StationFeeder" not in localized_mods:
+            localized_mods.append("StationFeeder")
+
+    sf_recipes_lua = mods_root / "StationFeeder" / "Scripts" / "recipes.lua"
+    if _replace_pairs_in_file(sf_recipes_lua, [
+        ('local s = "Makes " .. c .. " " .. tostring(name or "?")', 'local s = "產出 " .. c .. " 個 " .. tostring(name or "?")'),
+    ]):
+        localized_count += 1
+
+    # 4. 漢化 QuickStack 背包操作提示列 (QuickStack/Scripts/core/hint.lua)
+    qs_hint_lua = mods_root / "QuickStack" / "Scripts" / "core" / "hint.lua"
+    if _replace_pairs_in_file(qs_hint_lua, [
+        ('"Quick Stack:"', '"快速堆疊:"'),
+        ('"Exclude item:"', '"排除物品:"'),
+        ('if opts.hold then addText("(hold)", 4.0) end', 'if opts.hold then addText("(長按)", 4.0) end'),
+        ('(opts.hold and " (hold)" or "")', '(opts.hold and " (長按)" or "")'),
+    ]):
+        localized_count += 1
+        if "QuickStack" not in localized_mods:
+            localized_mods.append("QuickStack")
+
+    # 5. 漢化 RSDSFreedom 遊戲原生設定選單開關 (RSDSFreedom/Scripts/main.lua)
+    rsds_lua = mods_root / "RSDSFreedom" / "Scripts" / "main.lua"
+    if _replace_pairs_in_file(rsds_lua, [
+        ('en = { NoWeight = "No Item Weight", KeepInventory = "Keep Items on Death", NoDurability = "Unbreakable Items" },',
+         'en = { NoWeight = "物品無重量", KeepInventory = "死亡時保留物品", NoDurability = "物品不會損壞" },'),
+        ('zhs = { NoWeight = "物品无重量", KeepInventory = "死亡时保留物品", NoDurability = "物品不会损坏" },',
+         'zhs = { NoWeight = "物品無重量", KeepInventory = "死亡時保留物品", NoDurability = "物品不會損壞" },'),
+    ]):
+        localized_count += 1
+        if "RSDSFreedom" not in localized_mods:
+            localized_mods.append("RSDSFreedom")
+
+    # 6. 漢化 Stashlink 儲物帳本互動提示與銀行分類標籤 (Stashlink/Scripts/stashlink/)
+    sl_hint_lua = mods_root / "Stashlink" / "Scripts" / "stashlink" / "native_hint.lua"
+    if _replace_pairs_in_file(sl_hint_lua, [
+        ("label:SetText(FText('Open Stashlink'))", "label:SetText(FText('開啟儲物總管 (Stashlink)'))"),
+        ("'Open Stashlink (Hold and release Menu)'or 'Open Stashlink'", "'開啟儲物總管 (長按並放開選單鍵)'or '開啟儲物總管 (Stashlink)'"),
+    ]):
+        localized_count += 1
+        if "Stashlink" not in localized_mods:
+            localized_mods.append("Stashlink")
+
+    sl_cat_lua = mods_root / "Stashlink" / "Scripts" / "stashlink" / "bank_categories.lua"
+    if _replace_pairs_in_file(sl_cat_lua, [
+        ("{id='all',name='All items',short='All'}", "{id='all',name='全部物品',short='全部'}"),
+        ("{id='gear',name='Equipment',short='Gear'}", "{id='gear',name='武器裝備',short='裝備'}"),
+        ("{id='tools',name='Tools',short='Tools'}", "{id='tools',name='採集工具',short='工具'}"),
+        ("{id='food',name='Food and potions',short='Food'}", "{id='food',name='料理與藥水',short='飲食'}"),
+        ("{id='materials',name='Materials and seeds',short='Mats'}", "{id='materials',name='素材與種子',short='素材'}"),
+        ("{id='runes',name='Runes',short='Runes'}", "{id='runes',name='魔法符文',short='符文'}"),
+        ("{id='ammo',name='Ammunition and bait',short='Ammo'}", "{id='ammo',name='彈藥與魚餌',short='彈藥'}"),
+        ("{id='plans',name='Plans and tomes',short='Plans'}", "{id='plans',name='藍圖與典籍',short='圖紙'}"),
+        ("{id='quest',name='Quest items',short='Quest'}", "{id='quest',name='任務物品',short='任務'}"),
+        ("{id='other',name='Other items',short='Other'}", "{id='other',name='其他雜項',short='其他'}"),
+    ]):
+        localized_count += 1
+        if "Stashlink" not in localized_mods:
+            localized_mods.append("Stashlink")
+
+    return localized_count, localized_mods
+
+
 def install_all_mods(
     game_path: str,
     selected_filenames: Optional[List[str]] = None,
     sync_git: bool = True,
+    translate_texts: bool = True,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> Tuple[bool, str, int, int]:
     """
@@ -1283,6 +2086,7 @@ def install_all_mods(
     1. 從 Git 同步最新壓縮檔至本地 mods/
     2. 強制優先安裝固定版 UE4SS 與 RuneSchema
     3. 依序安裝所有勾選的擴充模組並寫入版本帳本
+    4. 自動套用遊戲內模組介面與設定選單繁體中文化 (translate_texts=True)
     回傳 (success, summary_msg, installed_count, total_count)
     """
     def _report(pct: int, msg: str):
@@ -1323,12 +2127,20 @@ def install_all_mods(
                 pass
 
     for idx, mod_info in enumerate(target_mods, 1):
-        pct = 20 + int((idx / max(1, total)) * 78)
-        display_name = mod_info["name"]
-        _report(pct, f"正在安裝 ({idx}/{total}): {display_name} (v{mod_info['version']})...")
+        pct = 20 + int((idx / max(1, total)) * 72)
+        zh_title = mod_info.get("zh_name") or mod_info["name"]
+        _report(pct, f"正在安裝 ({idx}/{total}): {zh_title} (v{mod_info['version']})...")
         ok, _ = install_single_archive(mod_info["filepath"], game_path, mod_info=mod_info)
         if ok:
             success_count += 1
+
+    # Step 4: 套用遊戲內模組介面與設定選單繁體中文化
+    trans_msg = ""
+    if translate_texts:
+        _report(95, "正在套用遊戲內模組設定選單與介面繁體中文化...")
+        loc_cnt, loc_mods = apply_mod_text_translations(game_path)
+        if loc_cnt > 0:
+            trans_msg = f"已同步完成 {len(loc_mods)} 項模組的遊戲內介面與設定選單繁體中文化（共處理 {loc_cnt} 個語言設定檔）。"
 
     # 安裝完成後更新 Git 狀態快取
     try:
@@ -1336,8 +2148,9 @@ def install_all_mods(
     except Exception:
         pass
 
-    _report(100, f"安裝完成！成功部署 {success_count}/{total} 項套件與模組。")
-    summary = f"{git_msg}\n成功安裝與更新 {success_count} / {total} 項套件與擴充模組！".strip()
+    _report(100, f"安裝與漢化完成！成功部署 {success_count}/{total} 項套件與模組。")
+    summary_parts = [p for p in (git_msg, f"成功安裝與更新 {success_count} / {total} 項套件與擴充模組！", trans_msg) if p]
+    summary = "\n".join(summary_parts).strip()
     return True, summary, success_count, total
 
 
