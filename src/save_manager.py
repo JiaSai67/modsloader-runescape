@@ -564,3 +564,4 @@ def write_save_settings(sav_path: str, new_settings: Dict[str, float]) -> str:
         f.write(final_save)
 
     return bak_path
+

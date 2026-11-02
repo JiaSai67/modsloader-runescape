@@ -7,7 +7,7 @@ MLRS - 世界存檔自訂難度設定編輯器 (World Save Settings Editor)
 
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QIcon
@@ -34,8 +34,9 @@ class SaveEditorDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("世界存檔自訂設定編輯器 (突破 3.0 上限 & 自由輸入)")
-        self.resize(880, 680)
+        self.resize(900, 720)
 
+        self.save_items: List[Dict[str, Any]] = []
         self.current_sav_path: Optional[str] = None
         self.current_settings: Dict[str, float] = {}
         self.input_widgets: Dict[str, Any] = {}
@@ -74,7 +75,7 @@ class SaveEditorDialog(QDialog):
         s_layout.addWidget(StrongBodyLabel("選擇存檔：", sel_card))
 
         self.save_combo = ComboBox(sel_card)
-        self.save_combo.setMinimumWidth(320)
+        self.save_combo.setMinimumWidth(380)
         self.save_combo.currentIndexChanged.connect(self._on_save_selected)
         s_layout.addWidget(self.save_combo, 1)
 
@@ -120,17 +121,22 @@ class SaveEditorDialog(QDialog):
 
     def _load_saves(self):
         """載入本機世界存檔列表"""
+        # 暫時中斷訊號避免反覆觸發
+        self.save_combo.blockSignals(True)
         self.save_combo.clear()
+
         saves = list_save_files()
-        # 過濾非世界存檔
         world_saves = []
         for s in saves:
             if s["filename"] in ("EnhancedInputUserSettings.sav", "UserSettings.sav"):
                 continue
             world_saves.append(s)
 
+        self.save_items = world_saves
+
         if not world_saves:
-            self.save_combo.addItem("未偵測到任何世界存檔 (.sav)", "")
+            self.save_combo.addItem("未偵測到任何世界存檔 (.sav)", userData="")
+            self.save_combo.blockSignals(False)
             self.btn_save.setEnabled(False)
             self._clear_settings_ui()
             return
@@ -138,13 +144,20 @@ class SaveEditorDialog(QDialog):
         self.btn_save.setEnabled(True)
         for s in world_saves:
             text = f"{s['world_name']}  ({s['mtime']} | {s['size'] // 1024} KB)"
-            self.save_combo.addItem(text, s["path"])
+            self.save_combo.addItem(text, userData=s["path"])
 
-        # 預設選取第一項
+        self.save_combo.blockSignals(False)
+
+        # 顯式載入第一項
         self.save_combo.setCurrentIndex(0)
+        self._on_save_selected(0)
 
     def _on_save_selected(self, index: int):
-        sav_path = self.save_combo.currentData()
+        if index < 0 or index >= len(self.save_items):
+            self._clear_settings_ui()
+            return
+
+        sav_path = self.save_items[index]["path"]
         if not sav_path or not os.path.exists(sav_path):
             self._clear_settings_ui()
             return
@@ -184,7 +197,7 @@ class SaveEditorDialog(QDialog):
                 categories[cat] = []
             categories[cat].append((tag, meta))
 
-        # 其他未在常用對照表的標籤放入「進階 AI 與細部標籤」
+        # 其他未在常用對照表的標籤放入「進階細部標籤」
         unmapped = []
         for tag, val in self.current_settings.items():
             if tag not in DIFFICULTY_META:
@@ -242,7 +255,7 @@ class SaveEditorDialog(QDialog):
                     spin.setRange(0.0, 9999.0)
                     spin.setDecimals(2)
                     spin.setSingleStep(0.5)
-                    spin.setMinimumWidth(120)
+                    spin.setMinimumWidth(130)
                     spin.setValue(float(curr_val))
                     grid.addWidget(spin, row, 1, Qt.AlignRight)
                     self.input_widgets[tag] = ("float", spin)
